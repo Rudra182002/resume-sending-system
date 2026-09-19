@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Block commits that carry anything credential-shaped.
+# Bypass (only if you are certain): git commit --no-verify
+fail=0
+pat='(sk-ant-api03-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}|AccountKey=|SharedAccessKey=|mongodb(\+srv)?://[^ "]*:[^ "@]+@|AKIA[0-9A-Z]{16}|SG\.[A-Za-z0-9_-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)'
+while IFS= read -r f; do
+  [ -f "$f" ] || continue
+  # skip docs, lockfiles, and this hook itself (its regex self-matches)
+  case "$f" in *.md|*.lock|.githooks/*) continue;; esac
+  if git show ":$f" 2>/dev/null | grep -nEq "$pat"; then
+    echo "  BLOCKED: $f looks like it contains a live credential"
+    fail=1
+  fi
+  # Any real-looking value in a tracked .env* file, placeholders excluded.
+  case "$f" in
+    .env*|*/.env*)
+      if git show ":$f" 2>/dev/null | grep -vE '\.\.\.$|=\s*$|^\s*#' | grep -nEq '(KEY|TOKEN|SECRET|PASS|CONN[A-Z_]*STRING)\s*=\s*.{16,}'; then
+        echo "  BLOCKED: $f has a real-looking value; keep secrets in .env (untracked)"
+        fail=1
+      fi;;
+  esac
+done < <(git diff --cached --name-only --diff-filter=ACM)
+[ "$fail" = 1 ] && { echo; echo "Commit aborted. Move secrets to .env (gitignored)."; exit 1; }
+exit 0
