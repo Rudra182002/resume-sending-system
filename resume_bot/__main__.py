@@ -7,6 +7,16 @@ def main():
     if cmd == "run":       pipeline.run(limit=int(arg) if arg else None)
     elif cmd == "ingest":  ingest.run()
     elif cmd == "score":   print(score.run())
+    elif cmd == "harvest":
+        from . import alerts, db, score
+        import collections
+        al = alerts.fetch(days=int(arg) if arg else 400, limit=40, verbose=True)
+        print(f"extracted {len(al)}", dict(collections.Counter(j["source"] for j in al)))
+        if al:
+            con = db.connect()
+            print("matched to ATS rows:", alerts.backfill_jd(con, al))
+            db.upsert_jobs(con, al)
+            print("scoring:", score.run())
     elif cmd == "doctor":
         from . import doctor; doctor.run()
     elif cmd == "review":  review.listing()
@@ -17,7 +27,7 @@ def main():
         print("dashboard -> http://127.0.0.1:8777   (ctrl-c to stop)")
         webapp.serve(port=int(arg) if arg else 8777)
     else:
-        print("usage: python -m resume_bot {run [n]|ingest|score|review|show <id>|approve <id> <email>|dash|doctor}")
+        print("usage: python -m resume_bot {run [n]|ingest|score|review|show <id>|approve <id> <email>|dash|doctor|harvest [days]}")
 
 if __name__ == "__main__":
     main()

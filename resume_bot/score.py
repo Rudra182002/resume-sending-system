@@ -22,6 +22,11 @@ def _location_tier(job, L, jd):
     if any(c in loc for c in L["india_cities"]):
         return "india", "India onsite/hybrid"
 
+    # No location at all (common in alert emails). Unknown is not foreign -
+    # don't reject on absence of evidence, just don't reward it either.
+    if not loc.strip():
+        return "remote_global", "location not stated"
+
     # Remove work-mode words and separators; whatever remains is geography.
     residue = _MODE_WORDS.sub(" ", loc)
     residue = re.sub(r"[^a-z ]+", " ", residue)

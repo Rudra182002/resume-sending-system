@@ -7,20 +7,28 @@ credentials, nothing automated pointed at their servers.
 Setup: create job alerts on each site, then filter them into one IMAP folder
 (e.g. "JobAlerts") so we read a narrow, predictable slice of your mail.
 """
-import imaplib, email, re, html, os, hashlib
+import imaplib, email, re, html, os, hashlib, time
 from email.header import decode_header
 
+# Verified against a real mailbox - these are the addresses actually used.
 SENDERS = {
     "linkedin": ["jobalerts-noreply@linkedin.com", "jobs-noreply@linkedin.com",
                  "jobs-listings@linkedin.com"],
-    "naukri":   ["info@naukri.com", "alerts@naukri.com", "jobalerts@naukri.com"],
-    "foundit":  ["alerts@foundit.in", "noreply@foundit.in", "jobs@foundit.in"],
+    "naukri":   ["naukrialerts@naukri.com", "info@naukri.com", "alerts@naukri.com"],
+    "foundit":  ["opportunities@foundit.in", "updates@alerts.foundit.in",
+                 "info@alerts.foundit.in", "jobmessenger@monsterindia.com"],
 }
+
+CITY_RE = re.compile(
+    r"\b(Bengaluru|Bangalore|Hyderabad|Pune|Kolkata|Chennai|Mumbai|Navi Mumbai|"
+    r"Delhi|New Delhi|Gurugram|Gurgaon|Noida|Ahmedabad|Jaipur|Kochi|Coimbatore|"
+    r"Indore|Chandigarh|Thiruvananthapuram|Bhubaneswar|Nagpur|Vadodara|India)\b")
 
 JOB_LINK = {
     "linkedin": re.compile(r"https://www\.linkedin\.com/(?:comm/)?jobs/view/(\d+)"),
-    "naukri":   re.compile(r"https://www\.naukri\.com/job-listings-([\w\-]+)"),
-    "foundit":  re.compile(r"https://www\.foundit\.in/(?:job|srp)/[\w\-/]+"),
+    "naukri":   re.compile(r"https?://(?:www\.)?naukri\.com/(?:job-listings-|jobs/)[\w\-]+"),
+    "foundit":  re.compile(r"https?://(?:www\.)?(?:foundit\.in|monsterindia\.com)/"
+                           r"(?:job|srp|seeker)/[\w\-/]+"),
 }
 
 
@@ -67,9 +75,30 @@ def _extract(site, body):
             continue
         if label.lower() in ("view job", "apply", "see all jobs", "view all"):
             continue
-        tail = re.sub(r"<[^>]+>", " ", body[m.end():m.end() + 400])
+        # Take a generous window, drop any tag fragment the slice cut in half,
+        # then strip tags. A 400-char window used to slice mid-tag, leaving raw
+        # HTML like '<p class="text-system-...' as the company name.
+        tail = body[m.end():m.end() + 2500]
+        tail = re.sub(r"<[^>]*>", " ", tail)     # complete tags
+        tail = re.sub(r"<[^>]*$", " ", tail)     # trailing half-tag
+        tail = re.sub(r"^[^<]*?>", " ", tail)    # leading half-tag
+        tail = re.sub(r"&[a-z]+;|&#\d+;", " ", tail)
         tail = re.sub(r"\s+", " ", html.unescape(tail)).strip()
-        bits = [b.strip() for b in re.split(r"[·|•]|\s{2,}", tail) if b.strip()][:2]
+        bits = [b.strip(" ·|•-") for b in re.split(r"[·|•]|\s{2,}", tail)
+                if b.strip(" ·|•-") and "<" not in b and len(b.strip()) > 1][:2]
+        # LinkedIn packs "Company City (Mode)" into one string. Split the city
+        # and work-mode back out so location scoring has something to use.
+        company, location = (bits[0] if bits else ""), (bits[1] if len(bits) > 1 else "")
+        mm = re.search(r"\((On-?site|Remote|Hybrid)\)\s*$", company, re.I)
+        mode = mm.group(1) if mm else ""
+        if mm:
+            company = company[:mm.start()].strip()
+        cm = CITY_RE.search(company)
+        if cm:
+            location = (company[cm.start():].strip() + (f" ({mode})" if mode else "")).strip()
+            company = company[:cm.start()].strip(" ,-")
+        elif mode:
+            location = mode
         key = (label.lower(), (bits[0] if bits else "").lower())
         if key in seen:
             continue
@@ -78,25 +107,42 @@ def _extract(site, body):
             "source": f"alert:{site}",
             "external_id": hashlib.md5(url.split("?")[0].encode()).hexdigest()[:16],
             "title": label,
-            "company": bits[0] if bits else "",
-            "location": bits[1] if len(bits) > 1 else "",
+            "company": company,
+            "location": location,
             "url": url.split("?")[0], "apply_url": url.split("?")[0],
             "jd_text": "",          # filled later by matching against ATS data
         })
     return jobs
 
 
-def fetch(host=None, user=None, password=None, folder="INBOX", days=3, limit=200):
+def fetch(host=None, user=None, password=None, folder="INBOX", days=None,
+          limit=200, verbose=False):
     host = host or os.getenv("IMAP_HOST", "imap.gmail.com")
     user = user or os.getenv("IMAP_USER")
     password = password or os.getenv("IMAP_PASS")
     if not (user and password):
         return []
+    days = int(days or os.getenv("IMAP_DAYS", "7"))
 
-    out = []
+    # Gmail throttles rapid repeat IMAP sessions: SEARCH starts returning empty
+    # rather than erroring. Retry with backoff before believing a zero.
+    for attempt in range(3):
+        out, searched = _harvest(host, user, password, folder, days, limit, verbose)
+        if out or not searched:
+            return out
+        if attempt < 2:
+            time.sleep(8 * (attempt + 1))
+    return out
+
+
+def _harvest(host, user, password, folder, days, limit, verbose=False):
+    """Returns (jobs, n_messages_searched). searched==0 means nothing matched at
+    all, which is different from 'matched but extracted nothing'."""
+    out, searched = [], 0
     M = imaplib.IMAP4_SSL(host)
     M.login(user, password)
-    M.select(folder)
+    # readonly: never let a harvest change flags on the user's real mailbox
+    M.select(folder, readonly=True)
     try:
         import datetime
         since = (datetime.date.today() - datetime.timedelta(days=days)).strftime("%d-%b-%Y")
@@ -105,15 +151,28 @@ def fetch(host=None, user=None, password=None, folder="INBOX", days=3, limit=200
                 typ, data = M.search(None, f'(SINCE {since} FROM "{addr}")')
                 if typ != "OK" or not data[0]:
                     continue
-                for num in data[0].split()[-limit:]:
-                    typ, raw = M.fetch(num, "(RFC822)")
-                    if typ != "OK":
+                ids = data[0].split()[-limit:]          # newest N only
+                searched += len(ids)
+                if verbose:
+                    print(f"    {site}/{addr}: {len(ids)} messages")
+                for num in ids:
+                    # BODY.PEEK[] does not set \Seen. Plain RFC822 does, which
+                    # would mark hundreds of the user's emails as read.
+                    typ, raw = M.fetch(num, "(BODY.PEEK[])")
+                    if typ != "OK" or not raw or not isinstance(raw[0], tuple):
                         continue
-                    msg = email.message_from_bytes(raw[0][1])
-                    out.extend(_extract(site, _body(msg)))
+                    try:
+                        msg = email.message_from_bytes(raw[0][1])
+                        out.extend(_extract(site, _body(msg)))
+                    except Exception:
+                        continue
     finally:
-        M.close(); M.logout()
-    return out
+        try:
+            M.close()
+        except Exception:
+            pass
+        M.logout()
+    return out, searched
 
 
 def backfill_jd(con, alert_jobs):
