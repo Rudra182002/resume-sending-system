@@ -25,21 +25,40 @@ _robots_cache = {}
 
 
 def allowed(url):
-    """Ask robots.txt before every fetch. Fail closed on error."""
+    """Ask robots.txt before every fetch, per RFC 9309.
+
+    We fetch robots.txt ourselves rather than using RobotFileParser.read(),
+    because that helper treats 401/403 as disallow-all - an older convention.
+    RFC 9309 2.3.1.3 says any 4xx means robots.txt is UNAVAILABLE and the
+    crawler may proceed; only 5xx ("unreachable") implies disallow-all.
+    Plenty of sites (anything behind a strict WAF) 403 their robots.txt while
+    serving pages normally, and the old behaviour silently skipped them.
+    """
     try:
         parts = up.urlparse(url)
         root = f"{parts.scheme}://{parts.netloc}"
         if root not in _robots_cache:
-            r = rp.RobotFileParser()
-            r.set_url(root + "/robots.txt")
+            parser = None
             try:
-                r.read()
+                resp = httpx.get(root + "/robots.txt", headers=HEADERS,
+                                 timeout=httpx.Timeout(10.0, connect=5.0),
+                                 follow_redirects=True)
+                if resp.status_code >= 500:
+                    parser = "DENY"                     # unreachable -> stay out
+                elif resp.status_code < 400 and resp.text.strip():
+                    parser = rp.RobotFileParser()
+                    parser.parse(resp.text.splitlines())
+                # 4xx or empty body -> unavailable -> permitted (parser stays None)
             except Exception:
-                _robots_cache[root] = None      # no robots.txt served -> permitted
-                return True
-            _robots_cache[root] = r
+                parser = "DENY"                         # network failure -> stay out
+            _robots_cache[root] = parser
+
         parser = _robots_cache[root]
-        return True if parser is None else parser.can_fetch(UA, url)
+        if parser is None:
+            return True
+        if parser == "DENY":
+            return False
+        return parser.can_fetch(UA, url)
     except Exception:
         return False
 

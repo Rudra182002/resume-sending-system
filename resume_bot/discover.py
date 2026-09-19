@@ -16,6 +16,11 @@ import re, html, pathlib, yaml
 import httpx
 from . import enrich
 
+# Small firms often publish only a general inbox and treat it as the way in.
+GENERAL_ADDRS = re.compile(
+    r"\b((?:contact|info|hello|hi|team|reach|connect|enquir(?:y|ies)|query)"
+    r"@[a-z0-9][a-z0-9\.\-]*\.[a-z]{2,})\b", re.I)
+
 HEADERS = enrich.HEADERS
 TIMEOUT = httpx.Timeout(18.0, connect=7.0)
 SEEDS = pathlib.Path(__file__).resolve().parent.parent / "config" / "companies.yaml"
@@ -53,8 +58,10 @@ def _get(client, url):
 
 def find_careers_url(client, base):
     """Common paths first, then any careers-ish link on the homepage."""
-    for path in ("/careers", "/jobs", "/careers/", "/join-us", "/work-with-us",
-                 "/company/careers", "/about/careers", "/hiring"):
+    for path in ("/careers", "/career", "/careers/", "/career/", "/jobs", "/jobs/",
+                 "/join-us", "/join", "/work-with-us", "/we-are-hiring", "/hiring",
+                 "/openings", "/current-openings", "/company/careers",
+                 "/about/careers", "/life-at-us", "/culture/careers"):
         if _get(client, base + path):
             return base + path
     home = _get(client, base)
@@ -98,8 +105,9 @@ def crawl_one(client, name, domain):
     base = domain.rstrip("/")
     if not base.startswith("http"):
         base = "https://" + base
-    res = {"company": name, "domain": base, "careers_url": None,
-           "ats": None, "slug": None, "titles": [], "emails": []}
+    res = {"company": name, "domain": base, "careers_url": None, "ats": None,
+           "slug": None, "titles": [], "emails": [], "general_emails": [],
+           "speculative": False}
 
     careers = find_careers_url(client, base)
     if not careers:
@@ -119,6 +127,32 @@ def crawl_one(client, name, domain):
         a = m.group(1).lower()
         if a not in res["emails"]:
             res["emails"].append(a)
+    for m in GENERAL_ADDRS.finditer(page):
+        a = m.group(1).lower()
+        if a not in res["general_emails"]:
+            res["general_emails"].append(a)
+
+    # Fall back to the contact page for the address when careers doesn't carry one.
+    if not (res["emails"] or res["general_emails"]):
+        for cp in ("/contact-us", "/contact", "/contact-us/"):
+            cpage = _get(client, base + cp)
+            if not cpage:
+                continue
+            for m in enrich.ROLE_ADDRS.finditer(cpage):
+                a = m.group(1).lower()
+                if a not in res["emails"]:
+                    res["emails"].append(a)
+            for m in GENERAL_ADDRS.finditer(cpage):
+                a = m.group(1).lower()
+                if a not in res["general_emails"]:
+                    res["general_emails"].append(a)
+            if res["emails"] or res["general_emails"]:
+                break
+
+    # A careers page, a way to reach them, but nothing listed -> speculative route.
+    res["speculative"] = bool(
+        res["careers_url"] and not res["ats"] and not res["titles"]
+        and (res["emails"] or res["general_emails"]))
     return res
 
 
