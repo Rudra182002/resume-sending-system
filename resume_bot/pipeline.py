@@ -65,6 +65,7 @@ def run(limit=None, dry_run=None, skip_ingest=False):
                        (job_id,resume_path,tailor_notes,created_at) VALUES (?,?,?,?)""",
                     (job["id"], str(pdf), t.get("fit_rationale", ""), db.now()))
                 con.execute("UPDATE jobs SET status='queued' WHERE id=?", (job["id"],))
+                con.commit()          # per-job: an interrupted run must not lose state
                 made += 1
             except Exception as e:
                 failed += 1
