@@ -3,7 +3,7 @@ import os, json, pathlib, datetime
 import httpx
 from dotenv import load_dotenv
 from rich.console import Console
-from . import db, ingest, score, tailor, render, enrich, outreach, llm
+from . import db, ingest, score, tailor, render, enrich, outreach, llm, llm
 
 load_dotenv()
 console = Console()

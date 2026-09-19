@@ -17,19 +17,19 @@ def _row(state, name, detail=""):
 
 def check_llm():
     console.print("\n[bold]LLM (resume tailoring)[/bold]")
-    k = os.getenv("ANTHROPIC_API_KEY") or ""
-    o = os.getenv("OPENAI_API_KEY") or ""
-    base = os.getenv("ANTHROPIC_BASE_URL") or os.getenv("ANTHROPIC_API_BASE") or ""
-    if not (k or o):
-        _row(BAD, "no key set", "console.anthropic.com -> API Keys -> Create Key")
+    from . import llm
+    from urllib.parse import urlparse
+    p = llm.provider()
+    if p == "none":
+        _row(BAD, "no provider configured", "set a key in .env (see .env.example)")
         return
-    if k and not k.startswith("sk-ant-"):
-        from urllib.parse import urlparse
-        host = urlparse(base).netloc if base else "(no base url)"
-        _row(WARN, "key is not a console key", f"routes via {host}")
-        _row(WARN, "", "a personal sk-ant-... key is the supported setup")
-        return
-    _row(OK, "key format valid", f"model {os.getenv('LLM_MODEL') or 'claude-sonnet-5'}")
+    _row(OK, f"provider: {p}", f"model {llm.model_name() or '(unset - required for azure)'}")
+    base = (os.getenv("ANTHROPIC_BASE_URL") or os.getenv("ANTHROPIC_API_BASE")
+            or os.getenv("OPENAI_BASE_URL") or os.getenv("AZURE_OPENAI_ENDPOINT") or "")
+    if base:
+        _row(WARN, "custom endpoint", urlparse(base).netloc)
+    if p == "azure" and not llm.model_name():
+        _row(BAD, "LLM_MODEL required", "Azure needs the deployment name")
 
 
 def check_adzuna():
