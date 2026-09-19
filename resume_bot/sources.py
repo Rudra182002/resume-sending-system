@@ -133,8 +133,20 @@ def remotive(client, queries=("machine learning", "ai engineer", "llm", "nlp", "
 
 # ---------- Official aggregator APIs (free keys; skipped when unset) ----------
 
-def adzuna(client, app_id, app_key, country="in", pages=3,
-           queries=("ai engineer", "machine learning engineer", "llm", "data scientist")):
+ADZUNA_QUERIES = (
+    "ai engineer", "machine learning engineer", "llm engineer", "genai engineer",
+    "generative ai", "nlp engineer", "data scientist", "applied scientist",
+    "mlops engineer", "deep learning", "computer vision engineer",
+    "rag", "langchain", "prompt engineer", "ai developer",
+    "python backend engineer", "fastapi", "forward deployed engineer",
+    "data engineer", "analytics engineer", "data analyst", "business analyst",
+    "business intelligence", "decision scientist", "ai ml", "pytorch",
+    "transformers", "vector database", "ai consultant",
+)
+
+
+def adzuna(client, app_id, app_key, country="in", pages=5,
+           queries=ADZUNA_QUERIES):
     """Adzuna jobseeker API - broad India coverage. https://developer.adzuna.com"""
     out = []
     for q in queries:

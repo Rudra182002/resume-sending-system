@@ -61,7 +61,11 @@ def score_job(job, p):
     if any(t in title for t in p["target_titles"]["strong"]):
         pts += 45; why.append("strong title")
     elif any(t in title for t in p["target_titles"]["ok"]):
-        pts += 22; why.append("adjacent title")
+        pts += 24; why.append("adjacent title")
+    elif any(t in title for t in p["target_titles"].get("fallback", [])):
+        # Wider net. Deliberately low so an analyst role never outranks an
+        # engineering one - these are options, not the target.
+        pts += 8; why.append("fallback title (step down from current role)")
     else:
         return 0, ["title mismatch"]
 

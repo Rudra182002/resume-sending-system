@@ -5,12 +5,22 @@ linkedin: linkedin.com/in/rudrabha-chakraborty-2b02551b7
 location: Kolkata, India
 
 # Titles worth applying to. Weighted highest signal first.
+# Three tiers. Strong = what you do now. Ok = genuine lateral moves.
+# Fallback = wider net, scored lower so it never outranks a real match.
 target_titles:
   strong: ["ai engineer", "llm engineer", "machine learning engineer", "genai engineer",
-           "applied scientist", "applied ai", "ml engineer", "nlp engineer",
-           "forward deployed engineer", "ai platform engineer"]
+           "generative ai engineer", "applied scientist", "applied ai", "ml engineer",
+           "nlp engineer", "forward deployed engineer", "ai platform engineer",
+           "ai/ml engineer", "aiml engineer", "deep learning engineer",
+           "computer vision engineer", "ai developer", "ai researcher"]
   ok:     ["software engineer, ml", "data scientist", "research engineer",
-           "backend engineer", "platform engineer", "mlops"]
+           "backend engineer", "platform engineer", "mlops", "ml ops",
+           "data engineer", "analytics engineer", "machine learning scientist",
+           "decision scientist", "quantitative analyst", "ai consultant",
+           "solutions engineer", "python developer", "data science"]
+  fallback: ["data analyst", "business analyst", "bi analyst", "business intelligence",
+             "product analyst", "reporting analyst", "insights analyst",
+             "analytics consultant", "research analyst", "operations analyst"]
 
 # Skills lifted from the resume. Hits in the JD raise the score.
 skills:
