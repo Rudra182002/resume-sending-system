@@ -3,7 +3,7 @@ import os, json, pathlib, datetime
 import httpx
 from dotenv import load_dotenv
 from rich.console import Console
-from . import db, ingest, score, tailor, render, enrich, outreach
+from . import db, ingest, score, tailor, render, enrich, outreach, llm
 
 load_dotenv()
 console = Console()
@@ -13,7 +13,7 @@ DRAFTS = ROOT / "output" / "drafts"
 
 def run(limit=None, dry_run=None, skip_ingest=False):
     if dry_run is None:
-        dry_run = not os.getenv("ANTHROPIC_API_KEY")
+        dry_run = not llm.configured()
     limit = limit or int(os.getenv("MAX_TAILORED_PER_DAY", "200"))
     DRAFTS.mkdir(parents=True, exist_ok=True)
     started = datetime.datetime.now()

@@ -5,6 +5,7 @@ master_resume.json. It may not invent employers, dates, metrics or technologies.
 verify_no_fabrication() enforces the numeric half of that automatically.
 """
 import json, os, re, pathlib, hashlib
+from . import llm
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 MASTER = ROOT / "data" / "master_resume.json"
@@ -93,25 +94,16 @@ def _stub(job, master):
 def tailor(job, master=None, company_ctx="", dry_run=None):
     master = master or load_master()
     if dry_run is None:
-        dry_run = not os.getenv("ANTHROPIC_API_KEY")
+        dry_run = not llm.configured()
 
     if dry_run:
         out = _stub(job, master)
         out["_mode"] = "dry-run"
         return out
 
-    from anthropic import Anthropic
-    client = Anthropic()
-    resp = client.messages.create(
-        model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5"),
-        max_tokens=2000,
-        system=SYSTEM,
-        messages=[{"role": "user", "content": build_user_prompt(job, master, company_ctx)}],
-    )
-    text = resp.content[0].text.strip()
-    text = re.sub(r"^```(?:json)?|```$", "", text, flags=re.M).strip()
-    out = json.loads(text)
-    out["_mode"] = "live"
+    out = llm.complete(SYSTEM, build_user_prompt(job, master, company_ctx),
+                       max_tokens=2000)
+    out["_mode"] = f"live:{llm.provider()}"
 
     invented = verify_no_fabrication(out, master)
     if invented:

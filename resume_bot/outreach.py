@@ -1,5 +1,6 @@
 """Draft one outreach email per job. LLM-written, dry-run capable."""
 import os, json, re
+from . import llm
 
 SYSTEM = """You write short, specific job-application emails for one candidate.
 
@@ -43,18 +44,11 @@ def _stub(job, master, tailored):
 
 def draft(job, master, tailored, company_ctx="", dry_run=None):
     if dry_run is None:
-        dry_run = not os.getenv("ANTHROPIC_API_KEY")
+        dry_run = not llm.configured()
     if dry_run:
         return _stub(job, master, tailored)
 
-    from anthropic import Anthropic
-    resp = Anthropic().messages.create(
-        model=os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5"),
-        max_tokens=900, system=SYSTEM,
-        messages=[{"role": "user",
-                   "content": build_prompt(job, master, tailored, company_ctx)}],
-    )
-    txt = re.sub(r"^```(?:json)?|```$", "", resp.content[0].text.strip(), flags=re.M).strip()
-    out = json.loads(txt)
-    out["_mode"] = "live"
+    out = llm.complete(SYSTEM, build_prompt(job, master, tailored, company_ctx),
+                       max_tokens=900)
+    out["_mode"] = f"live:{llm.provider()}"
     return out

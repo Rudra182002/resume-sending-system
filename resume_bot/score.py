@@ -10,6 +10,39 @@ def load_profile():
     return yaml.safe_load(CFG.read_text())
 
 
+_MODE_WORDS = re.compile(
+    r"\b(remote|hybrid|on[\s\-]?site|in[\s\-]?office|work from home|wfh|flexible|"
+    r"full[\s\-]?time|part[\s\-]?time|contract|multiple locations|various)\b", re.I)
+_GLOBAL = {"", "anywhere", "worldwide", "global", "distributed", "any", "emea/apac"}
+
+
+def _location_tier(job, L, jd):
+    """india | remote_india | remote_global | reject"""
+    loc = (job["location"] or "").lower()
+    if any(c in loc for c in L["india_cities"]):
+        return "india", "India onsite/hybrid"
+
+    # Remove work-mode words and separators; whatever remains is geography.
+    residue = _MODE_WORDS.sub(" ", loc)
+    residue = re.sub(r"[^a-z ]+", " ", residue)
+    residue = re.sub(r"\s+", " ", residue).strip()
+
+    # A bare work-mode with no geography ("Hybrid", "Distributed") tells us
+    # nothing. Only trust it if the JD actually names India.
+    if residue in _GLOBAL:
+        jd_india = any(c in jd for c in ("india", "bengaluru", "bangalore",
+                                         "hyderabad", "gurugram", "pune"))
+        if jd_india:
+            return "remote_india", "remote, India named in JD"
+        if not (job["remote"] or "remote" in loc or "anywhere" in loc
+                or "worldwide" in loc):
+            # e.g. bare "Hybrid" - hybrid to WHICH office? India unproven.
+            return "reject", "work-mode only, no geography, India not named"
+        return "remote_global", "remote, no geography stated"
+
+    return "reject", "foreign geography"
+
+
 def score_job(job, p):
     title = (job["title"] or "").lower()
     jd = (job["jd_text"] or "").lower()
@@ -41,10 +74,20 @@ def score_job(job, p):
     if dom:
         why.append(f"{dom} domain terms")
 
-    if job["remote"] or any(l in loc for l in p["locations_ok"]):
-        pts += 8; why.append("location ok")
-    else:
-        pts -= 25; why.append("location mismatch")
+    # India-primary location model.
+    L = p["locations"]
+    if any(b in jd or b in loc for b in L["blocked"]):
+        return 0, ["closed to India-based applicants"]
+
+    # Allowlist, not blocklist. Enumerating every foreign place name is a losing
+    # game ("Remote - California" slipped a blocklist three times). Instead:
+    # strip the work-mode words and see what geography is LEFT. India or nothing
+    # passes; anything else names a market that isn't yours.
+    tier, note = _location_tier(job, L, jd)
+    if tier == "reject":
+        return 0, [f"scoped to another market ({job['location']})"]
+    pts += {"india": 26, "remote_india": 22, "remote_global": 9}[tier]
+    why.append(note)
 
     # Junior-friendly signals - he has 1.5 yrs, so seniority language is a real filter.
     if re.search(r"\b(1\+|2\+|0-2|1-3|2-4|entry|junior|new grad)\s*year", jd):

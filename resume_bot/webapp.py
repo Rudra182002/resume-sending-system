@@ -6,7 +6,7 @@ import json, pathlib, os, datetime
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from . import db, send
+from . import db, send, llm
 
 ROOT = pathlib.Path(__file__).resolve().parent
 DRAFTS = ROOT.parent / "output" / "drafts"
@@ -30,7 +30,7 @@ def _stats(con):
             (today,)).fetchone()[0],
         "cap": int(os.getenv("MAX_EMAILS_PER_DAY", "20")),
         "auto_send": os.getenv("AUTO_SEND", "false").lower() == "true",
-        "live_llm": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "live_llm": llm.configured(),
     }
 
 

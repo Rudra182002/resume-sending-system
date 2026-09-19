@@ -1,0 +1,34 @@
+# Long-tail companies to crawl directly - startups that never hit a public ATS board.
+# Add freely: {name, domain}. Discovery finds the careers page and any embedded ATS.
+- {name: Sarvam AI,        domain: sarvam.ai}
+- {name: Krutrim,          domain: olakrutrim.com}
+- {name: CoRover,          domain: corover.ai}
+- {name: Observe.AI,       domain: observe.ai}
+- {name: Uniphore,         domain: uniphore.com}
+- {name: Haptik,           domain: haptik.ai}
+- {name: Gupshup,          domain: gupshup.io}
+- {name: Yellow.ai,        domain: yellow.ai}
+- {name: Mad Street Den,   domain: madstreetden.com}
+- {name: Qure.ai,          domain: qure.ai}
+- {name: SigTuple,         domain: sigtuple.com}
+- {name: Niramai,          domain: niramai.com}
+- {name: Fractal,          domain: fractal.ai}
+- {name: Tredence,         domain: tredence.com}
+- {name: LatentView,       domain: latentview.com}
+- {name: Quantiphi,        domain: quantiphi.com}
+- {name: Atlan,            domain: atlan.com}
+- {name: Hasura,           domain: hasura.io}
+- {name: Postman,          domain: postman.com}
+- {name: BrowserStack,     domain: browserstack.com}
+- {name: Zeta,             domain: zeta.tech}
+- {name: Setu,             domain: setu.co}
+- {name: Signzy,           domain: signzy.com}
+- {name: Perfios,          domain: perfios.com}
+- {name: Jupiter,          domain: jupiter.money}
+- {name: CRED,             domain: cred.club}
+- {name: Skit.ai,          domain: skit.ai}
+- {name: Vahan,            domain: vahan.co}
+- {name: TrueFoundry,      domain: truefoundry.com}
+- {name: Portkey,          domain: portkey.ai}
+- {name: Composio,         domain: composio.dev}
+- {name: E2E Networks,     domain: e2enetworks.com}

@@ -21,8 +21,33 @@ skills:
 
 # Hard filters
 exclude_companies: [bluepond, "bluepond ai"]
-exclude_title_terms: [senior staff, principal, director, "vp ", head of, manager,
-                      intern, sales, recruiter, marketing, "10+ years", "8+ years"]
-locations_ok: [india, bangalore, bengaluru, hyderabad, pune, kolkata, delhi, gurgaon,
-               noida, chennai, mumbai, remote, anywhere, worldwide]
+# 'staff' and 'principal' are genuine mismatches at 1.5 yrs. 'senior' is left in
+# play - titles inflate, and the worst case is a no.
+exclude_title_terms: [staff, principal, director, "vp ", "head of", manager,
+                      intern, sales, recruiter, marketing, architect,
+                      "10+ years", "8+ years", "7+ years"]
+
+# India-primary. Tiered: onshore India > remote open to India > remote global.
+market: india
+locations:
+  india_cities: [bangalore, bengaluru, hyderabad, pune, kolkata, delhi, gurgaon,
+                 gurugram, noida, chennai, mumbai, ahmedabad, jaipur, kochi,
+                 coimbatore, indore, india]
+  remote_ok:    [remote, anywhere, worldwide, distributed, work from home]
+  # Geography named in the LOCATION field that rules India out - "Remote - US"
+  # is remote *within* the US, not remote-anywhere.
+  foreign: [united states, "u.s.", usa, " us ", "- us", "(us", us-, america,
+            canada, ontario, toronto, vancouver, alberta, "british columbia",
+            united kingdom, " uk", "- uk", london, ireland, dublin, spain,
+            germany, berlin, munich, france, paris, netherlands, amsterdam,
+            poland, portugal, lisbon, europe, emea, latam, brazil, mexico,
+            singapore, japan, tokyo, korea, australia, sydney, new zealand,
+            new york, san francisco, seattle, austin, boston, chicago, denver,
+            los angeles, atlanta, toronto, israel, tel aviv, dubai, "middle east"]
+
+  # Strong signal a role is closed to an India-based applicant.
+  blocked:      ["united states only", "us only", "must be located in the us",
+                 "authorized to work in the united states", "eu only",
+                 "uk only", "canada only", "us citizen", "security clearance",
+                 "gc holder", "green card"]
 min_score: 35

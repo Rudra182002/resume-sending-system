@@ -1,6 +1,7 @@
 ashby:
 - clickhouse
 - cohere
+- composio
 - deel
 - huggingface
 - linear
@@ -11,6 +12,7 @@ ashby:
 - perplexityai
 - ramp
 - replicate
+- sarvam
 - sourcegraph
 - together
 - weightsandbiases
@@ -27,8 +29,10 @@ greenhouse:
 - dropbox
 - elastic
 - gitlab
+- glance
 - groww
 - hashicorp
+- inmobi
 - instacart
 - lyft
 - mongodb
@@ -39,14 +43,18 @@ greenhouse:
 - samsara
 - scaleai
 - sumologic
+- thoughtworks
 - turing
 - twilio
 - zenoti
 lever:
 - brex
 - checkr
+- cred
+- fi
 - hevodata
 - matchgroup
+- meesho
 - netflix
 - nutanix
 - palantir
