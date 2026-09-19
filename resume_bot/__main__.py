@@ -10,8 +10,12 @@ def main():
     elif cmd == "review":  review.listing()
     elif cmd == "show":    review.show(int(arg))
     elif cmd == "approve": review.approve(int(arg), sys.argv[3])
+    elif cmd == "dash":
+        from . import webapp
+        print("dashboard -> http://127.0.0.1:8777   (ctrl-c to stop)")
+        webapp.serve(port=int(arg) if arg else 8777)
     else:
-        print("usage: python -m resume_bot {run [n]|ingest|score|review|show <id>|approve <id> <email>}")
+        print("usage: python -m resume_bot {run [n]|ingest|score|review|show <id>|approve <id> <email>|dash}")
 
 if __name__ == "__main__":
     main()

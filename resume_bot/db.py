@@ -44,6 +44,20 @@ CREATE TABLE IF NOT EXISTS suppression (
     created_at TEXT NOT NULL
 );
 
+-- People/addresses per company: who we found, where, and whether we mailed them.
+CREATE TABLE IF NOT EXISTS contacts (
+    id          INTEGER PRIMARY KEY,
+    company     TEXT NOT NULL,
+    email       TEXT NOT NULL,
+    name        TEXT,
+    role        TEXT,
+    source      TEXT,              -- careers-page | alert | manual
+    verified    INTEGER DEFAULT 0,
+    created_at  TEXT NOT NULL,
+    UNIQUE(company, email)
+);
+CREATE INDEX IF NOT EXISTS idx_contacts_company ON contacts(company);
+
 CREATE TABLE IF NOT EXISTS sent_log (
     id         INTEGER PRIMARY KEY,
     job_id     INTEGER REFERENCES jobs(id),
@@ -84,6 +98,14 @@ def upsert_jobs(con, jobs):
             continue
     con.commit()
     return con.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+
+def add_contact(con, company, email, name=None, role=None, source="careers-page", verified=0):
+    con.execute("""INSERT OR IGNORE INTO contacts
+                   (company,email,name,role,source,verified,created_at)
+                   VALUES (?,?,?,?,?,?,?)""",
+                (company, email.lower().strip(), name, role, source, verified, now()))
+    con.commit()
+
 
 def counts(con):
     rows = con.execute("SELECT status, COUNT(*) c FROM jobs GROUP BY status").fetchall()

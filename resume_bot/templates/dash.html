@@ -1,0 +1,251 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resume Tracker</title>
+<style>
+:root{
+  color-scheme:light;
+  --plane:#f9f9f7; --surface:#fcfcfb; --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10);
+  --series-1:#2a78d6; --series-soft:#cde2fb;
+  --good:#0ca30c; --warning:#fab219; --serious:#ec835a; --critical:#d03b3b;
+}
+@media (prefers-color-scheme:dark){:root:where(:not([data-theme="light"])){
+  color-scheme:dark;
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+  --series-1:#3987e5; --series-soft:#184f95;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --plane:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10);
+  --series-1:#3987e5; --series-soft:#184f95;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--ink);
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;}
+header{position:sticky;top:0;z-index:5;background:var(--surface);
+  border-bottom:1px solid var(--ring);padding:10px 16px;
+  display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+h1{font-size:15px;margin:0;font-weight:650;letter-spacing:-.01em}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav a{padding:5px 11px;border-radius:7px;text-decoration:none;color:var(--ink-2);font-size:13px}
+nav a:hover{background:var(--plane)}
+nav a.on{background:var(--series-1);color:#fff;font-weight:550}
+main{padding:16px;max-width:1240px;margin:0 auto}
+.tiles{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:18px}
+.tile{background:var(--surface);border:1px solid var(--ring);border-radius:10px;padding:12px 14px}
+.tile .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.055em}
+.tile .v{font-size:25px;font-weight:660;letter-spacing:-.02em;margin-top:3px}
+.tile .s{font-size:11.5px;color:var(--ink-2);margin-top:1px}
+.card{background:var(--surface);border:1px solid var(--ring);border-radius:10px;
+  padding:14px 16px;margin-bottom:16px}
+.card h2{font-size:12.5px;margin:0 0 12px;color:var(--ink-2);font-weight:600;
+  text-transform:uppercase;letter-spacing:.05em}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.05em;font-weight:600;padding:6px 8px;border-bottom:1px solid var(--grid)}
+td{padding:7px 8px;border-bottom:1px solid var(--grid);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tr:hover td{background:var(--plane)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+a{color:var(--series-1)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:1.5px 7px;border-radius:99px;
+  font-size:11px;font-weight:600;border:1px solid var(--ring);white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:99px;background:currentColor}
+.c-queued{color:var(--warning)} .c-applied{color:var(--good)}
+.c-scored{color:var(--series-1)} .c-rejected{color:var(--muted)}
+/* single-series bars: magnitude only, direct-labelled, 4px rounded data end */
+.bar-row{display:grid;grid-template-columns:120px 1fr 52px;gap:10px;align-items:center;
+  margin-bottom:5px;font-size:12.5px}
+.bar-row .lbl{color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{background:var(--grid);border-radius:4px;height:15px;overflow:hidden}
+.fill{height:100%;background:var(--series-1);border-radius:0 4px 4px 0;min-width:2px}
+.bar-row .val{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.spark{display:flex;gap:4px;align-items:flex-end;height:74px;padding-top:6px;
+  justify-content:flex-start}
+.spark .col{flex:1 1 0;max-width:56px;display:flex;flex-direction:column;
+  justify-content:flex-end;align-items:center;gap:3px;min-width:0}
+.spark .b{width:100%;background:var(--series-1);border-radius:4px 4px 0 0;min-height:2px}
+.spark .d{font-size:9.5px;color:var(--muted);white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.banner{padding:9px 13px;border-radius:9px;margin-bottom:14px;font-size:12.5px;
+  border:1px solid var(--ring);background:var(--surface);display:block;line-height:1.7}
+.banner .chip{margin-right:7px;vertical-align:1px}
+.banner b{font-weight:650}
+.muted{color:var(--muted)} .sec{color:var(--ink-2)}
+form.inline{display:inline}
+button{font:inherit;font-size:12px;padding:4px 10px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--ring);background:var(--surface);color:var(--ink)}
+button:hover{background:var(--plane)}
+input[type=text],input[type=search]{font:inherit;font-size:13px;padding:5px 9px;
+  border-radius:7px;border:1px solid var(--ring);background:var(--surface);color:var(--ink)}
+pre{white-space:pre-wrap;background:var(--plane);padding:11px;border-radius:8px;
+  font:12.5px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;border:1px solid var(--ring)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+@media(max-width:620px){.bar-row{grid-template-columns:90px 1fr 42px}
+  td:nth-child(n+5),th:nth-child(n+5){display:none}}
+</style></head><body>
+{% macro chip(s) %}<span class="chip c-{{s}}">{{s}}</span>{% endmacro %}
+<header>
+  <h1>Resume Tracker</h1>
+  <nav>
+    <a href="/" class="{{'on' if tab=='overview'}}">Overview</a>
+    <a href="/applications" class="{{'on' if tab=='applications'}}">Applications</a>
+    <a href="/contacts" class="{{'on' if tab=='contacts'}}">Contacts</a>
+    <a href="/mail" class="{{'on' if tab=='mail'}}">Mail</a>
+  </nav>
+  <span style="margin-left:auto;font-size:11.5px" class="muted">
+    {% if stats.live_llm %}LLM live{% else %}dry-run{% endif %} ·
+    {% if stats.auto_send %}auto-send ON{% else %}send OFF{% endif %}
+  </span>
+</header>
+<main>
+
+{% if not stats.live_llm %}
+<div class="banner"><span class="chip c-queued">dry-run</span>
+No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not tailored to each JD.</div>
+{% endif %}
+
+<div class="tiles">
+  <div class="tile"><div class="k">Jobs seen</div><div class="v">{{ "{:,}".format(stats.total_jobs) }}</div><div class="s">all sources</div></div>
+  <div class="tile"><div class="k">Matched</div><div class="v">{{ stats.matched }}</div><div class="s">cleared the bar</div></div>
+  <div class="tile"><div class="k">Queued</div><div class="v">{{ stats.queued }}</div><div class="s">awaiting you</div></div>
+  <div class="tile"><div class="k">Applied</div><div class="v">{{ stats.applied }}</div><div class="s">submitted</div></div>
+  <div class="tile"><div class="k">Contacts</div><div class="v">{{ stats.contacts }}</div><div class="s">published addrs</div></div>
+  <div class="tile"><div class="k">Mail today</div><div class="v">{{ stats.sent_today }}</div><div class="s">cap {{ stats.cap }}</div></div>
+</div>
+
+{% if tab=='overview' %}
+  <div class="card"><h2>Applications per day — last 14 days</h2>
+    {% set mx = (timeline|map(attribute='n')|max) if timeline else 1 %}
+    {% if timeline %}
+    <div class="spark">
+      {% for t in timeline|reverse %}
+      <div class="col" title="{{t.d}}: {{t.n}} applications">
+        <span class="sec" style="font-size:10px;font-variant-numeric:tabular-nums">{{t.n}}</span>
+        <div class="b" style="height:{{ (t.n/mx*52)|round|int + 2 }}px"></div>
+        <span class="d">{{ t.d[5:] }}</span>
+      </div>{% endfor %}
+    </div>
+    {% else %}<p class="muted">No applications yet.</p>{% endif %}
+  </div>
+
+  <div class="card"><h2>Where jobs came from</h2>
+    {% set smx = (by_source|map(attribute='n')|max) if by_source else 1 %}
+    {% for s in by_source %}
+    <div class="bar-row">
+      <span class="lbl">{{ s.source }}</span>
+      <div class="track"><div class="fill" style="width:{{ (s.n/smx*100)|round(1) }}%"></div></div>
+      <span class="val">{{ s.n }}</span>
+    </div>{% endfor %}
+    <p class="muted" style="font-size:11.5px;margin:10px 0 0">Bar length = postings ingested. Single measure, single hue.</p>
+  </div>
+
+  <div class="card"><h2>Recent activity</h2>
+    <table><thead><tr><th>Company</th><th>Role</th><th>Source</th>
+      <th class="num">Score</th><th>Status</th><th>When</th></tr></thead><tbody>
+    {% for r in recent %}<tr>
+      <td><a href="/job/{{r.id}}">{{ r.company }}</a></td>
+      <td class="sec">{{ r.title[:52] }}</td>
+      <td class="muted">{{ r.source }}</td>
+      <td class="num">{{ r.score|round|int }}</td>
+      <td>{{ chip(r.status) }}</td>
+      <td class="muted">{{ r.created_at[:16]|replace('T',' ') }}</td>
+    </tr>{% else %}<tr><td colspan="6" class="muted">Nothing queued yet — run the pipeline.</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+{% endif %}
+
+{% if tab=='applications' %}
+  <div class="card">
+    <form class="row" method="get">
+      <input type="search" name="q" placeholder="company or role" value="{{ q or '' }}">
+      <button>Search</button>
+      <a href="/applications"><button type="button">All</button></a>
+      <a href="/applications?status=queued"><button type="button">Queued</button></a>
+      <a href="/applications?status=applied"><button type="button">Applied</button></a>
+    </form>
+    <table><thead><tr><th>Company</th><th>Role</th><th>Location</th><th>Source</th>
+      <th class="num">Score</th><th>Status</th><th>Apply</th></tr></thead><tbody>
+    {% for r in rows %}<tr>
+      <td><a href="/job/{{r.id}}">{{ r.company }}</a></td>
+      <td class="sec">{{ r.title[:46] }}</td>
+      <td class="muted">{{ (r.location or '')[:26] }}</td>
+      <td class="muted">{{ r.source }}</td>
+      <td class="num">{{ r.score|round|int }}</td>
+      <td>{{ chip(r.status) }}</td>
+      <td>{% if r.apply_url %}<a href="{{r.apply_url}}" target="_blank" rel="noopener">open ↗</a>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="7" class="muted">Nothing here.</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+{% endif %}
+
+{% if tab=='contacts' %}
+  <div class="card"><h2>Contacts — published application addresses only</h2>
+    <table><thead><tr><th>Company</th><th>Email</th><th>Role</th><th>Source</th>
+      <th class="num">Mailed</th><th></th></tr></thead><tbody>
+    {% for r in rows %}<tr>
+      <td>{{ r.company }}</td><td class="sec">{{ r.email }}</td>
+      <td class="muted">{{ r.role or '—' }}</td><td class="muted">{{ r.source }}</td>
+      <td class="num">{{ r.mailed }}</td>
+      <td><form class="inline" method="post" action="/suppress">
+        <input type="hidden" name="email" value="{{r.email}}">
+        <button>Suppress</button></form></td>
+    </tr>{% else %}<tr><td colspan="6" class="muted">No contacts yet. Enrichment only keeps addresses a company publishes for applicants.</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+  <div class="card"><h2>Suppression list — never contacted again</h2>
+    <table><thead><tr><th>Email</th><th>Reason</th><th>Added</th></tr></thead><tbody>
+    {% for s in supp %}<tr><td>{{s.email}}</td><td class="muted">{{s.reason}}</td>
+      <td class="muted">{{ s.created_at[:10] }}</td></tr>
+    {% else %}<tr><td colspan="3" class="muted">Empty.</td></tr>{% endfor %}</tbody></table>
+  </div>
+{% endif %}
+
+{% if tab=='mail' %}
+  <div class="card"><h2>Sent mail — {{ stats.emails_sent }} total, {{ stats.sent_today }} today (cap {{ stats.cap }})</h2>
+    <table><thead><tr><th>When</th><th>To</th><th>Company</th><th>Subject</th><th>Status</th></tr></thead><tbody>
+    {% for r in rows %}<tr>
+      <td class="muted">{{ r.sent_at[:16]|replace('T',' ') }}</td>
+      <td class="sec">{{ r.to_email }}</td><td>{{ r.company or '—' }}</td>
+      <td class="muted">{{ (r.subject or '')[:44] }}</td>
+      <td>{{ chip(r.status or 'queued') }}</td>
+    </tr>{% else %}<tr><td colspan="5" class="muted">No mail sent. Sending is off until AUTO_SEND=true or you approve individually.</td></tr>{% endfor %}
+    </tbody></table>
+  </div>
+{% endif %}
+
+{% if tab=='job' and j %}
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div><h2 style="margin:0 0 3px">{{ j.company }}</h2>
+        <div style="font-size:17px;font-weight:600">{{ j.title }}</div>
+        <div class="muted" style="font-size:12.5px">{{ j.location }} · {{ j.source }} · score {{ j.score|round|int }} · {{ chip(j.status) }}</div></div>
+      <div class="row" style="margin:0">
+        {% if j.apply_url %}<a href="{{j.apply_url}}" target="_blank" rel="noopener"><button>Open apply page ↗</button></a>{% endif %}
+        <form class="inline" method="post" action="/mark/{{j.id}}">
+          <input type="hidden" name="status" value="applied"><button>Mark applied</button></form>
+      </div>
+    </div>
+    {% if j.score_reasons %}<p class="muted" style="font-size:12px">Matched on: {{ j.score_reasons }}</p>{% endif %}
+  </div>
+
+  {% if d %}
+  <div class="card"><h2>Drafted email</h2>
+    <p class="sec"><b>Subject:</b> {{ d.subject }}</p><pre>{{ d.body }}</pre>
+    {% if d.gaps %}<p class="sec" style="font-size:12.5px"><b>Gaps vs this JD:</b> {{ d.gaps|join(', ') }}</p>{% endif %}
+    <p class="muted" style="font-size:12px">Resume: {{ d.resume }}</p>
+  </div>{% endif %}
+
+  {% if contacts %}
+  <div class="card"><h2>Known addresses at {{ j.company }}</h2>
+    <table><tbody>{% for c in contacts %}<tr><td>{{c.email}}</td>
+      <td class="muted">{{ c.role or '' }}</td></tr>{% endfor %}</tbody></table>
+  </div>{% endif %}
+
+  <div class="card"><h2>Job description</h2>
+    <pre style="max-height:400px;overflow:auto">{{ (j.jd_text or 'No JD captured.')[:9000] }}</pre></div>
+{% endif %}
+
+</main></body></html>

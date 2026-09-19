@@ -69,3 +69,17 @@ plus official aggregator APIs instead.
 
 No guessed contact addresses. Only addresses companies publish for applicants
 (`careers@`, `jobs@`). Guessed addresses bounce, and bounces wreck deliverability.
+
+## Dashboard
+
+```bash
+python -m resume_bot dash     # http://127.0.0.1:8777
+```
+
+Binds to 127.0.0.1 only — your job-search data never leaves the machine.
+
+Tabs: **Overview** (KPIs, 14-day timeline, source breakdown, recent activity) ·
+**Applications** (search/filter, direct apply links) · **Contacts** (published
+addresses + suppression list) · **Mail** (send log vs daily cap). Click any
+company for the job detail page: full JD, drafted email, tailored resume path,
+gaps vs that JD, and a "Mark applied" button.
