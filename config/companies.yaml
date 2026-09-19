@@ -1,34 +1,30 @@
-# Long-tail companies to crawl directly - startups that never hit a public ATS board.
-# Add freely: {name, domain}. Discovery finds the careers page and any embedded ATS.
-- {name: Sarvam AI,        domain: sarvam.ai}
-- {name: Krutrim,          domain: olakrutrim.com}
-- {name: CoRover,          domain: corover.ai}
-- {name: Observe.AI,       domain: observe.ai}
-- {name: Uniphore,         domain: uniphore.com}
-- {name: Haptik,           domain: haptik.ai}
-- {name: Gupshup,          domain: gupshup.io}
-- {name: Yellow.ai,        domain: yellow.ai}
-- {name: Mad Street Den,   domain: madstreetden.com}
-- {name: Qure.ai,          domain: qure.ai}
-- {name: SigTuple,         domain: sigtuple.com}
-- {name: Niramai,          domain: niramai.com}
-- {name: Fractal,          domain: fractal.ai}
-- {name: Tredence,         domain: tredence.com}
-- {name: LatentView,       domain: latentview.com}
-- {name: Quantiphi,        domain: quantiphi.com}
-- {name: Atlan,            domain: atlan.com}
-- {name: Hasura,           domain: hasura.io}
-- {name: Postman,          domain: postman.com}
-- {name: BrowserStack,     domain: browserstack.com}
-- {name: Zeta,             domain: zeta.tech}
-- {name: Setu,             domain: setu.co}
-- {name: Signzy,           domain: signzy.com}
-- {name: Perfios,          domain: perfios.com}
-- {name: Jupiter,          domain: jupiter.money}
-- {name: CRED,             domain: cred.club}
-- {name: Skit.ai,          domain: skit.ai}
-- {name: Vahan,            domain: vahan.co}
-- {name: TrueFoundry,      domain: truefoundry.com}
-- {name: Portkey,          domain: portkey.ai}
-- {name: Composio,         domain: composio.dev}
-- {name: E2E Networks,     domain: e2enetworks.com}
+# Long-tail companies crawled directly. Add freely: {name, domain}
+[{domain: sarvam.ai, name: Sarvam AI}, {domain: olakrutrim.com, name: Krutrim}, {domain: corover.ai, name: CoRover},
+  {domain: observe.ai, name: Observe.AI}, {domain: uniphore.com, name: Uniphore}, {domain: haptik.ai,
+    name: Haptik}, {domain: gupshup.io, name: Gupshup}, {domain: yellow.ai, name: Yellow.ai}, {domain: madstreetden.com,
+    name: Mad Street Den}, {domain: qure.ai, name: Qure.ai}, {domain: sigtuple.com, name: SigTuple}, {
+    domain: niramai.com, name: Niramai}, {domain: fractal.ai, name: Fractal}, {domain: tredence.com, name: Tredence},
+  {domain: latentview.com, name: LatentView}, {domain: quantiphi.com, name: Quantiphi}, {domain: atlan.com,
+    name: Atlan}, {domain: hasura.io, name: Hasura}, {domain: postman.com, name: Postman}, {domain: browserstack.com,
+    name: BrowserStack}, {domain: zeta.tech, name: Zeta}, {domain: setu.co, name: Setu}, {domain: signzy.com,
+    name: Signzy}, {domain: perfios.com, name: Perfios}, {domain: jupiter.money, name: Jupiter}, {domain: cred.club,
+    name: CRED}, {domain: skit.ai, name: Skit.ai}, {domain: vahan.co, name: Vahan}, {domain: truefoundry.com,
+    name: TrueFoundry}, {domain: portkey.ai, name: Portkey}, {domain: composio.dev, name: Composio}, {
+    domain: e2enetworks.com, name: E2E Networks}, {domain: dhurin.in, name: Dhurin}, {domain: flamapp.ai,
+    name: Flam}, {domain: dashtoon.com, name: Dashtoon}, {domain: sprinto.com, name: Sprinto}, {domain: zluri.com,
+    name: Zluri}, {domain: rocketlane.com, name: Rocketlane}, {domain: plumhq.com, name: Plum}, {domain: spotdraft.com,
+    name: Spotdraft}, {domain: nurix.ai, name: Nurix AI}, {domain: ema.co, name: Ema}, {domain: rasa.io,
+    name: Rasa.io}, {domain: jiva.ag, name: Jiva AI}, {domain: trywingman.com, name: Wingman}, {domain: entropik.io,
+    name: Entropik}, {domain: netcorecloud.com, name: Netcore Cloud}, {domain: zvolv.com, name: Zvolv},
+  {domain: leena.ai, name: Leena AI}, {domain: avoma.com, name: Avoma}, {domain: rezo.ai, name: Rezo.ai},
+  {domain: senseforth.ai, name: Senseforth}, {domain: kore.ai, name: Kore.ai}, {domain: bolt.earth, name: Bolt.Earth},
+  {domain: jai-kisan.com, name: Jai Kisan}, {domain: khoslalabs.com, name: Khosla Labs}, {domain: eightfold.ai,
+    name: Eightfold}, {domain: darwinbox.com, name: Darwinbox}, {domain: whatfix.com, name: Whatfix},
+  {domain: mindtickle.com, name: MindTickle}, {domain: zenoti.com, name: Zenoti}, {domain: innovaccer.com,
+    name: Innovaccer}, {domain: healthplix.com, name: HealthPlix}, {domain: wysa.com, name: Wysa}, {domain: doceree.com,
+    name: Doceree}, {domain: cropin.com, name: Cropin}, {domain: stellapps.com, name: Stellapps}, {domain: aereo.io,
+    name: Aereo}, {domain: satsure.co, name: SatSure}, {domain: skylarklabs.ai, name: Skylark Labs}, {
+    domain: tonboimaging.com, name: Tonbo Imaging}, {domain: ideaforge.co.in, name: Ideaforge}, {domain: detecttechnologies.com,
+    name: Detect Technologies}, {domain: intangles.com, name: Intangles}, {domain: minuszero.ai, name: Minus
+      Zero}, {domain: swaayatt.com, name: Swaayatt Robots}, {domain: netradyne.com, name: Netradyne},
+  {domain: streak.ai, name: Streak AI}]
