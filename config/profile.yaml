@@ -1,0 +1,28 @@
+name: Rudrabha Chakraborty
+email: crudrabha@gmail.com
+phone: "+91 74399 68388"
+linkedin: linkedin.com/in/rudrabha-chakraborty-2b02551b7
+location: Kolkata, India
+
+# Titles worth applying to. Weighted highest signal first.
+target_titles:
+  strong: ["ai engineer", "llm engineer", "machine learning engineer", "genai engineer",
+           "applied scientist", "applied ai", "ml engineer", "nlp engineer",
+           "forward deployed engineer", "ai platform engineer"]
+  ok:     ["software engineer, ml", "data scientist", "research engineer",
+           "backend engineer", "platform engineer", "mlops"]
+
+# Skills lifted from the resume. Hits in the JD raise the score.
+skills:
+  core:   [rag, llm, agentic, langchain, langgraph, dspy, prompt, embedding,
+           vector, retrieval, evaluation, fine-tuning, transformer, openai, anthropic]
+  stack:  [python, fastapi, celery, redis, mongodb, azure, docker, sql, qdrant, chromadb]
+  domain: [insurance, underwriting, claims, insurtech, document, ocr, extraction, fintech]
+
+# Hard filters
+exclude_companies: [bluepond, "bluepond ai"]
+exclude_title_terms: [senior staff, principal, director, "vp ", head of, manager,
+                      intern, sales, recruiter, marketing, "10+ years", "8+ years"]
+locations_ok: [india, bangalore, bengaluru, hyderabad, pune, kolkata, delhi, gurgaon,
+               noida, chennai, mumbai, remote, anywhere, worldwide]
+min_score: 35
