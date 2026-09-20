@@ -60,4 +60,29 @@ locations:
                  "authorized to work in the united states", "eu only",
                  "uk only", "canada only", "us citizen", "security clearance",
                  "gc holder", "green card"]
+# Staffing agencies and job-board reposts. Penalised, not excluded - they do
+# place real roles, but a direct employer should always rank above them.
+recruiter_markers:
+  - staffing
+  - recruit
+  - "hire wings"
+  - hiring
+  - talent solutions
+  - talent acquisition
+  - manpower
+  - placement
+  - "hr solutions"
+  - consultancy
+  - "prime worldwide"
+  - "insight global"
+  - sourcebae
+  - freelancer
+  - "top gen ai jobs"
+  - "job portal"
+  - "jobs pvt"
+  - iprogrammer
+  - "services private limited"
+  - "workforce"
+  - "resourcing"
+
 min_score: 35

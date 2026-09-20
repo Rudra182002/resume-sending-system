@@ -6,6 +6,32 @@ from . import db
 CFG = pathlib.Path(__file__).resolve().parent.parent / "config" / "profile.yaml"
 
 
+def known_employers(con):
+    """Companies we have positive evidence are direct employers: they run their
+    own ATS board, or we crawled a real careers page on their own domain.
+    A positive signal beats blocklisting agency names - the name list is endless
+    and always one variant behind."""
+    names = set()
+    for r in con.execute("SELECT DISTINCT company FROM jobs "
+                         "WHERE source IN ('greenhouse','lever','ashby')"):
+        if r["company"]:
+            names.add(r["company"].lower().strip())
+    try:
+        import yaml
+        seeds = yaml.safe_load(
+            (pathlib.Path(__file__).resolve().parent.parent /
+             "config" / "companies.yaml").read_text()) or []
+        for c in seeds:
+            if isinstance(c, dict) and c.get("name"):
+                names.add(c["name"].lower().strip())
+    except Exception:
+        pass
+    for r in con.execute("SELECT DISTINCT company FROM contacts"):
+        if r["company"]:
+            names.add(r["company"].lower().strip())
+    return names
+
+
 def load_profile():
     return yaml.safe_load(CFG.read_text())
 
@@ -60,7 +86,7 @@ def _location_tier(job, L, jd):
     return "reject", "foreign geography"
 
 
-def score_job(job, p):
+def score_job(job, p, employers=None):
     title = (job["title"] or "").lower()
     jd = (job["jd_text"] or "").lower()
     loc = (job["location"] or "").lower()
@@ -119,15 +145,27 @@ def score_job(job, p):
     if len(jd) < 400:
         pts -= 8; why.append("thin JD")
 
+    # Staffing firm rather than the employer - one more layer between you and
+    # the hiring manager, and often the same role listed by several agencies.
+    if any(m in company for m in p.get("recruiter_markers", [])):
+        pts -= 18; why.append("recruiter/staffing listing")
+
+    # Positive evidence of a direct employer outranks name-pattern guessing.
+    if employers:
+        c = company.strip()
+        if c in employers or any(c.startswith(e[:18]) for e in employers if len(e) > 6):
+            pts += 14; why.append("verified direct employer")
+
     return max(0, min(100, pts)), why
 
 
 def run():
     p = load_profile()
     con = db.connect()
+    employers = known_employers(con)
     rows = con.execute("SELECT * FROM jobs WHERE score IS NULL").fetchall()
     for r in rows:
-        s, why = score_job(r, p)
+        s, why = score_job(r, p, employers)
         status = "scored" if s >= p["min_score"] else "rejected"
         con.execute("UPDATE jobs SET score=?, score_reasons=?, status=? WHERE id=?",
                     (s, "; ".join(why), status, r["id"]))
