@@ -57,9 +57,12 @@ def _client_and_call(system, user, max_tokens, as_json):
         if not parts:                      # older/plain shapes
             parts = [b.text for b in r.content if hasattr(b, "text")]
         if not parts:
+            kinds = ",".join(getattr(b, "type", "?") for b in r.content)
+            stop = getattr(r, "stop_reason", "?")
             raise RuntimeError(
-                "no text block in response; blocks="
-                + ",".join(getattr(b, "type", "?") for b in r.content))
+                f"no text block in response (blocks={kinds}, stop_reason={stop}). "
+                "If blocks=thinking and stop_reason=max_tokens, the thinking "
+                "budget consumed the whole allowance - raise LLM_MAX_TOKENS.")
         return "\n".join(parts)
 
     if p == "azure":
@@ -88,6 +91,11 @@ def _client_and_call(system, user, max_tokens, as_json):
 
 
 def complete(system, user, max_tokens=2000, as_json=True):
+    # With extended thinking, max_tokens covers the thinking budget AND the
+    # answer. A 2000 budget was fully consumed by thinking, so the response
+    # came back with a thinking block and no text at all.
+    floor = int(os.getenv("LLM_MAX_TOKENS", "8000"))
+    max_tokens = max(max_tokens, floor)
     if provider() == "none":
         raise RuntimeError("no LLM configured - set a key in .env, then: "
                            "python -m resume_bot doctor")
