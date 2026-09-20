@@ -85,4 +85,16 @@ recruiter_markers:
   - "workforce"
   - "resourcing"
 
+# Freshness. Response rates fall sharply once a posting is a few weeks old,
+# and a quarter of the raw feed was over 90 days stale.
+recency:
+  max_age_days: 120      # older than this is almost certainly filled
+  bonus:
+    2: 18                # posted in the last 2 days
+    7: 12
+    21: 5
+    45: 0
+    90: -12
+    120: -22
+
 min_score: 35

@@ -107,6 +107,9 @@ a{color:var(--series-1)}
   font-size:11.5px;font-weight:620;border:1px solid currentColor;white-space:nowrap;
   background:color-mix(in srgb,currentColor 8%,transparent)}
 .chip::before{content:"";width:5px;height:5px;border-radius:99px;background:currentColor;flex:none}
+.age{font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink-2);white-space:nowrap}
+.age.fresh{color:var(--good);font-weight:620}
+.age.old{color:var(--muted)}
 .c-queued{color:var(--warning)} .c-applied{color:var(--good)}
 .c-scored{color:var(--series-1)} .c-rejected,.c-skipped{color:var(--muted)}
 
@@ -226,15 +229,15 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
   </div>
 
   <div class="card"><h2>Recent activity</h2>
-    <div class="tw"><table><thead><tr><th>Company</th><th>Role</th><th>Source</th>
-      <th class="num">Score</th><th>Status</th><th>When</th></tr></thead><tbody>
+    <div class="tw"><table><thead><tr><th>Company</th><th>Role</th><th>Posted</th><th>Source</th>
+      <th class="num">Score</th><th>Status</th></tr></thead><tbody>
     {% for r in recent %}<tr>
       <td><a href="/job/{{r.id}}">{{ r.company }}</a></td>
       <td class="sec">{{ r.title[:52] }}</td>
+      {% set a = agelabel(r.posted_ts) %}<td><span class="age {{ a[1] }}">{{ a[0] }}</span></td>
       <td class="muted">{{ r.source }}</td>
       <td class="num">{{ score(r.score) }}</td>
       <td>{{ chip(r.status) }}</td>
-      <td class="muted">{{ r.created_at[:16]|replace('T',' ') }}</td>
     </tr>{% else %}<tr><td colspan="6"><div class="empty"><div class="big">Nothing queued yet</div>
    Run <code>python -m resume_bot agents 50</code> to tailor and queue applications.</div></td></tr>{% endfor %}
     </tbody></table></div>
@@ -243,25 +246,35 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
 
 {% if tab=='applications' %}
   <div class="card">
-    <form class="row" method="get">
+    <form class="row" method="get" style="margin-bottom:10px">
       <input type="search" name="q" placeholder="company or role" value="{{ q or '' }}">
+      {% if age %}<input type="hidden" name="age" value="{{ age }}">{% endif %}
       <button>Search</button>
-      <a href="/applications"><button type="button">All</button></a>
-      <a href="/applications?status=queued"><button type="button">Queued</button></a>
-      <a href="/applications?status=applied"><button type="button">Applied</button></a>
-      <a href="/applications?status=skipped"><button type="button">Skipped</button></a>
+      <a href="/applications?age={{ age }}"><button type="button">All</button></a>
+      <a href="/applications?status=queued&age={{ age }}"><button type="button">Queued</button></a>
+      <a href="/applications?status=applied&age={{ age }}"><button type="button">Applied</button></a>
+      <a href="/applications?status=skipped&age={{ age }}"><button type="button">Skipped</button></a>
     </form>
-    <div class="tw"><table><thead><tr><th>Company</th><th>Role</th><th>Location</th><th>Source</th>
+    <div class="row">
+      <span class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:650">Posted</span>
+      <a href="/applications?status={{ status }}"><button type="button" {{ 'class=primary' if not age }}>Any time</button></a>
+      <a href="/applications?status={{ status }}&age=today"><button type="button" {{ 'class=primary' if age=='today' }}>Today</button></a>
+      <a href="/applications?status={{ status }}&age=week"><button type="button" {{ 'class=primary' if age=='week' }}>This week</button></a>
+      <a href="/applications?status={{ status }}&age=month"><button type="button" {{ 'class=primary' if age=='month' }}>This month</button></a>
+      <a href="/applications?status={{ status }}&age=older"><button type="button" {{ 'class=primary' if age=='older' }}>Older</button></a>
+    </div>
+    <div class="tw"><table><thead><tr><th>Company</th><th>Role</th><th>Location</th><th>Posted</th><th>Source</th>
       <th class="num">Score</th><th>Status</th><th>Apply</th></tr></thead><tbody>
     {% for r in rows %}<tr>
       <td><a href="/job/{{r.id}}">{{ r.company }}</a></td>
       <td class="sec">{{ r.title[:46] }}</td>
       <td class="muted">{{ (r.location or '')[:26] }}</td>
+      {% set a = agelabel(r.posted_ts) %}<td><span class="age {{ a[1] }}">{{ a[0] }}</span></td>
       <td class="muted">{{ r.source }}</td>
       <td class="num">{{ score(r.score) }}</td>
       <td>{{ chip(r.status) }}</td>
       <td>{% if r.apply_url %}<a href="{{r.apply_url}}" target="_blank" rel="noopener">open ↗</a>{% endif %}</td>
-    </tr>{% else %}<tr><td colspan="7"><div class="empty"><div class="big">No applications match</div>
+    </tr>{% else %}<tr><td colspan="8"><div class="empty"><div class="big">No applications match</div>
    Try a different filter, or clear the search.</div></td></tr>{% endfor %}
     </tbody></table></div>
   </div>
@@ -314,7 +327,8 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
       <div>
         <div class="co">{{ j.company }}</div>
         <h1 class="role">{{ j.title }}</h1>
-        <div class="metaline"><span>{{ j.location }}</span><span>{{ j.source }}</span><span>{{ score(j.score) }}</span></div>
+        {% set a = agelabel(j.posted_ts) %}
+        <div class="metaline"><span>{{ j.location }}</span><span class="age {{ a[1] }}">posted {{ a[0] }}</span><span>{{ j.source }}</span><span>{{ score(j.score) }}</span></div>
       </div>
       <div style="text-align:right">
         <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Remaining</div>

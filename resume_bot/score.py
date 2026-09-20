@@ -1,7 +1,7 @@
 """Rank postings against the profile. Deterministic and cheap - no LLM spend here.
 The LLM only ever sees jobs that clear this bar."""
 import pathlib, yaml, re
-from . import db
+from . import db, dates
 
 CFG = pathlib.Path(__file__).resolve().parent.parent / "config" / "profile.yaml"
 
@@ -144,6 +144,19 @@ def score_job(job, p, employers=None):
 
     if len(jd) < 400:
         pts -= 8; why.append("thin JD")
+
+    # Freshness. A posting nobody has answered in four months is usually filled.
+    rec = p.get("recency") or {}
+    age = dates.age_days(job["posted_ts"] if "posted_ts" in job.keys() else None)
+    if age is not None:
+        if age > rec.get("max_age_days", 120):
+            return 0, [f"stale posting ({age:.0f} days old)"]
+        for cutoff in sorted(rec.get("bonus", {})):
+            if age <= cutoff:
+                delta = rec["bonus"][cutoff]
+                pts += delta
+                why.append(f"posted {age:.0f}d ago ({delta:+d})")
+                break
 
     # Staffing firm rather than the employer - one more layer between you and
     # the hiring manager, and often the same role listed by several agencies.

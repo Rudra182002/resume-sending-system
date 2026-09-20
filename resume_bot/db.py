@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     jd_text       TEXT,
     salary        TEXT,
     posted_at     TEXT,
+    posted_ts     INTEGER,
     fetched_at    TEXT NOT NULL,
     score         REAL,
     score_reasons TEXT,
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS jobs (
 );
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_score  ON jobs(score DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_posted ON jobs(posted_ts DESC);
 
 CREATE TABLE IF NOT EXISTS applications (
     id           INTEGER PRIMARY KEY,
@@ -77,11 +79,34 @@ CREATE TABLE IF NOT EXISTS sent_log (
 );
 """
 
+# Columns added after the first release. CREATE TABLE IF NOT EXISTS will not
+# add a column to an existing table, so they are applied before the schema runs
+# (an index on a missing column otherwise fails the whole script).
+MIGRATIONS = [
+    ("jobs", "posted_ts", "INTEGER"),
+]
+
+
+def _migrate(con):
+    for table, column, decl in MIGRATIONS:
+        try:
+            cols = {r[1] for r in con.execute(f"PRAGMA table_info({table})")}
+        except sqlite3.Error:
+            continue
+        if cols and column not in cols:
+            try:
+                con.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+            except sqlite3.Error:
+                pass
+
+
 def connect():
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
+    _migrate(con)
     con.executescript(SCHEMA)
+    con.commit()
     return con
 
 def now():

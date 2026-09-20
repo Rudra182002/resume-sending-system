@@ -14,6 +14,28 @@ app = FastAPI(title="Resume Tracker")
 tpl = Jinja2Templates(directory=str(ROOT / "templates"))
 
 
+def _age(ts):
+    if not ts:
+        return None
+    import time
+    return max(0.0, (time.time() - ts) / 86400.0)
+
+
+def _agelabel(ts):
+    d = _age(ts)
+    if d is None:
+        return ("\u2014", "muted")
+    if d < 1:
+        return ("today", "fresh")
+    if d < 2:
+        return ("1d", "fresh")
+    if d <= 7:
+        return (f"{d:.0f}d", "fresh")
+    if d <= 30:
+        return (f"{d:.0f}d", "")
+    return (f"{d:.0f}d", "old")
+
+
 def _stats(con):
     c = db.counts(con)
     today = datetime.date.today().isoformat()
@@ -44,7 +66,7 @@ def home(request: Request):
            FROM jobs GROUP BY source ORDER BY n DESC""").fetchall()
     recent = con.execute(
         """SELECT j.id,j.company,j.title,j.location,j.score,j.status,j.source,j.apply_url,
-                  a.created_at, a.resume_path
+                  j.posted_ts, a.created_at, a.resume_path
            FROM jobs j JOIN applications a ON a.job_id=j.id
            ORDER BY a.created_at DESC LIMIT 60""").fetchall()
     timeline = con.execute(
@@ -53,14 +75,14 @@ def home(request: Request):
     con.close()
     return tpl.TemplateResponse(request, "dash.html", {
         "tab": "overview", "stats": stats,
-        "by_source": by_source, "recent": recent, "timeline": timeline})
+        "by_source": by_source, "recent": recent, "timeline": timeline, "agelabel": _agelabel})
 
 
 @app.get("/applications", response_class=HTMLResponse)
-def applications(request: Request, status: str = "", q: str = ""):
+def applications(request: Request, status: str = "", q: str = "", age: str = ""):
     con = db.connect()
     sql = """SELECT j.id,j.company,j.title,j.location,j.score,j.status,j.source,
-                    j.apply_url,a.created_at,a.resume_path,a.submitted_at
+                    j.apply_url,j.posted_ts,a.created_at,a.resume_path,a.submitted_at
              FROM jobs j JOIN applications a ON a.job_id=j.id WHERE 1=1"""
     args = []
     if status:
@@ -68,12 +90,22 @@ def applications(request: Request, status: str = "", q: str = ""):
     if q:
         sql += " AND (lower(j.company) LIKE ? OR lower(j.title) LIKE ?)"
         args += [f"%{q.lower()}%"] * 2
-    sql += " ORDER BY a.created_at DESC LIMIT 400"
+    cutoffs = {"today": 1, "week": 7, "month": 30}
+    if age in cutoffs:
+        import time
+        sql += " AND j.posted_ts IS NOT NULL AND j.posted_ts >= ?"
+        args.append(int(time.time() - cutoffs[age] * 86400))
+    elif age == "older":
+        import time
+        sql += " AND (j.posted_ts IS NULL OR j.posted_ts < ?)"
+        args.append(int(time.time() - 30 * 86400))
+    sql += " ORDER BY j.posted_ts DESC NULLS LAST, a.created_at DESC LIMIT 400"
     rows = con.execute(sql, args).fetchall()
     stats = _stats(con); con.close()
     return tpl.TemplateResponse(request, "dash.html", {
         "tab": "applications", "stats": stats,
-        "rows": rows, "status": status, "q": q})
+        "rows": rows, "status": status, "q": q, "age": age,
+        "agelabel": _agelabel})
 
 
 @app.get("/contacts", response_class=HTMLResponse)
@@ -87,7 +119,7 @@ def contacts(request: Request):
     stats = _stats(con); con.close()
     return tpl.TemplateResponse(request, "dash.html", {
         "tab": "contacts", "stats": stats,
-        "rows": rows, "supp": supp})
+        "rows": rows, "supp": supp, "agelabel": _agelabel})
 
 
 @app.get("/mail", response_class=HTMLResponse)
@@ -98,7 +130,7 @@ def mail(request: Request):
            LEFT JOIN jobs j ON j.id=s.job_id ORDER BY s.sent_at DESC LIMIT 300""").fetchall()
     stats = _stats(con); con.close()
     return tpl.TemplateResponse(request, "dash.html", {
-        "tab": "mail", "stats": stats, "rows": rows})
+        "tab": "mail", "stats": stats, "rows": rows, "agelabel": _agelabel})
 
 
 @app.get("/job/{job_id}", response_class=HTMLResponse)
@@ -120,7 +152,7 @@ def job(request: Request, job_id: int):
     return tpl.TemplateResponse(request, "dash.html", {
         "tab": "job", "stats": stats,
         "j": j, "a": a, "d": d, "contacts": cts,
-        "trace": trace, "agent_errors": agent_errors})
+        "trace": trace, "agent_errors": agent_errors, "agelabel": _agelabel})
 
 
 PROFILE = {
@@ -153,7 +185,7 @@ def work(request: Request):
     stats = _stats(con); con.close()
     return tpl.TemplateResponse(request, "dash.html", {
         "tab": "work", "stats": stats, "j": row, "d": d,
-        "remaining": remaining, "profile": PROFILE})
+        "remaining": remaining, "profile": PROFILE, "agelabel": _agelabel})
 
 
 @app.post("/work/{job_id}/{action}")
