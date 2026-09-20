@@ -2,9 +2,9 @@
 
     ./.venv/bin/python -m resume_bot dash     ->  http://127.0.0.1:8777
 """
-import json, pathlib, os, datetime
+import json, pathlib, os, re, datetime
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from . import db, send, llm, llm
 
@@ -200,6 +200,25 @@ def work_action(job_id: int, action: str):
         con.execute("UPDATE jobs SET status='skipped' WHERE id=?", (job_id,))
     con.commit(); con.close()
     return RedirectResponse("/work", status_code=303)
+
+
+@app.get("/resume/{job_id}")
+def resume(job_id: int, download: int = 0):
+    """Serve the tailored PDF for this job - inline so it previews in the tab."""
+    con = db.connect()
+    row = con.execute("SELECT a.resume_path, j.company, j.title FROM applications a "
+                      "JOIN jobs j ON j.id=a.job_id WHERE a.job_id=?", (job_id,)).fetchone()
+    con.close()
+    if not row or not row["resume_path"]:
+        return HTMLResponse("<p>No resume rendered for this job yet.</p>", status_code=404)
+    fp = pathlib.Path(row["resume_path"])
+    if not fp.exists():
+        return HTMLResponse(f"<p>Missing file: {fp}</p>", status_code=404)
+    safe = re.sub(r"[^A-Za-z0-9]+", "_", f"{row['company']}_{row['title']}")[:60]
+    return FileResponse(
+        str(fp), media_type="application/pdf",
+        filename=f"Rudrabha_Chakraborty_{safe}.pdf",
+        content_disposition_type="attachment" if download else "inline")
 
 
 @app.post("/mark/{job_id}")

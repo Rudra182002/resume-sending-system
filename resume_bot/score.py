@@ -172,13 +172,25 @@ def score_job(job, p, employers=None):
     return max(0, min(100, pts)), why
 
 
-def run():
+def run(rescore_queued=False):
+    """rescore_queued: also re-score rows already queued, so a policy change
+    (recency, recruiter penalty) reaches jobs that were queued under the old
+    rules instead of leaving them stranded at the top of the work list."""
     p = load_profile()
     con = db.connect()
     employers = known_employers(con)
+    if rescore_queued:
+        con.execute("UPDATE jobs SET score=NULL WHERE status='queued'")
+        con.commit()
     rows = con.execute("SELECT * FROM jobs WHERE score IS NULL").fetchall()
     for r in rows:
         s, why = score_job(r, p, employers)
+        if r["status"] == "queued":
+            # keep it queued - it has a rendered resume - but refresh the score
+            # so ordering reflects current policy.
+            con.execute("UPDATE jobs SET score=?, score_reasons=? WHERE id=?",
+                        (s, "; ".join(why), r["id"]))
+            continue
         status = "scored" if s >= p["min_score"] else "rejected"
         con.execute("UPDATE jobs SET score=?, score_reasons=?, status=? WHERE id=?",
                     (s, "; ".join(why), status, r["id"]))

@@ -264,7 +264,7 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
       <a href="/applications?status={{ status }}&age=older"><button type="button" {{ 'class=primary' if age=='older' }}>Older</button></a>
     </div>
     <div class="tw"><table><thead><tr><th>Company</th><th>Role</th><th>Location</th><th>Posted</th><th>Source</th>
-      <th class="num">Score</th><th>Status</th><th>Apply</th></tr></thead><tbody>
+      <th class="num">Score</th><th>Status</th><th>Resume</th><th>Apply</th></tr></thead><tbody>
     {% for r in rows %}<tr>
       <td><a href="/job/{{r.id}}">{{ r.company }}</a></td>
       <td class="sec">{{ r.title[:46] }}</td>
@@ -273,8 +273,9 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
       <td class="muted">{{ r.source }}</td>
       <td class="num">{{ score(r.score) }}</td>
       <td>{{ chip(r.status) }}</td>
-      <td>{% if r.apply_url %}<a href="{{r.apply_url}}" target="_blank" rel="noopener">open ↗</a>{% endif %}</td>
-    </tr>{% else %}<tr><td colspan="8"><div class="empty"><div class="big">No applications match</div>
+      <td><a href="/resume/{{r.id}}" target="_blank" rel="noopener">PDF</a></td>
+      <td>{% if r.apply_url %}<a href="{{r.apply_url}}" target="_blank" rel="noopener">open &nearr;</a>{% endif %}</td>
+    </tr>{% else %}<tr><td colspan="9"><div class="empty"><div class="big">No applications match</div>
    Try a different filter, or clear the search.</div></td></tr>{% endfor %}
     </tbody></table></div>
   </div>
@@ -342,6 +343,8 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
         <button class="good">&check; Applied &mdash; next</button></form>
       <form class="inline" method="post" action="/work/{{j.id}}/skip">
         <button>Skip</button></form>
+      <a href="/resume/{{j.id}}" target="_blank" rel="noopener"><button type="button">View resume</button></a>
+      <a href="/resume/{{j.id}}?download=1"><button type="button">Download</button></a>
       <a href="/job/{{j.id}}"><button type="button">Full detail</button></a>
     </div>
   </div>
@@ -355,7 +358,15 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
     {% if j.resume_path %}<tr><td class="muted">Resume path</td>
       <td><button class="cp" data-v="{{ j.resume_path }}" style="font-size:11.5px">{{ j.resume_path }}</button></td></tr>{% endif %}
     </tbody></table></div>
-    <p class="muted" style="font-size:11.5px;margin:10px 0 0">Upload the resume from that path in the portal's file picker.</p>
+    <p class="muted" style="font-size:11.5px;margin:10px 0 0">Upload the resume from that path in the portal's file picker, or hit Download.</p>
+  </div>
+
+  <div class="card"><h2>Tailored resume for this role</h2>
+    <object data="/resume/{{j.id}}#view=FitH" type="application/pdf"
+            style="width:100%;height:560px;border:1px solid var(--ring);border-radius:8px">
+      <p class="sec">Preview unavailable in this browser &mdash;
+        <a href="/resume/{{j.id}}" target="_blank">open it in a new tab</a>.</p>
+    </object>
   </div>
 
   {% if d and d.fit %}
@@ -387,7 +398,11 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
   <div class="card"><h2>Drafted email</h2>
     <p class="sec"><b>Subject:</b> {{ d.subject }}</p><pre>{{ d.body }}</pre>
     {% if d.gaps %}<p class="sec" style="font-size:12.5px"><b>Gaps vs this JD:</b> {{ d.gaps|join(', ') }}</p>{% endif %}
-    <p class="muted" style="font-size:12px">Resume: {{ d.resume }}</p>
+    <div class="row" style="margin-top:12px">
+      <a href="/resume/{{ d.job_id }}" target="_blank" rel="noopener"><button type="button">View tailored resume</button></a>
+      <a href="/resume/{{ d.job_id }}?download=1"><button type="button">Download</button></a>
+    </div>
+    <p class="muted" style="font-size:11.5px;margin-top:8px">{{ d.resume }}</p>
   </div>{% endif %}
 
   {% if contacts %}
