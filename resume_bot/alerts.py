@@ -14,7 +14,8 @@ from email.header import decode_header
 SENDERS = {
     "linkedin": ["jobalerts-noreply@linkedin.com", "jobs-noreply@linkedin.com",
                  "jobs-listings@linkedin.com"],
-    "naukri":   ["naukrialerts@naukri.com", "info@naukri.com", "alerts@naukri.com"],
+    # info@naukri.com is marketing ("Top companies are hiring!"), not alerts.
+    "naukri":   ["naukrialerts@naukri.com", "alerts@naukri.com"],
     "foundit":  ["opportunities@foundit.in", "updates@alerts.foundit.in",
                  "info@alerts.foundit.in", "jobmessenger@monsterindia.com"],
 }
@@ -26,7 +27,10 @@ CITY_RE = re.compile(
 
 JOB_LINK = {
     "linkedin": re.compile(r"https://www\.linkedin\.com/(?:comm/)?jobs/view/(\d+)"),
-    "naukri":   re.compile(r"https?://(?:www\.)?naukri\.com/(?:job-listings-|jobs/)[\w\-]+"),
+    # Real Naukri job links are /jd/job-listings-... - the /jd/ segment was
+    # missing from the pattern, so every alert extracted zero.
+    "naukri":   re.compile(r"https?://(?:www\.)?naukri\.com/"
+                           r"(?:jd/)?(?:job-listings-|jobs/)[\w\-]+"),
     "foundit":  re.compile(r"https?://(?:www\.)?(?:foundit\.in|monsterindia\.com)/"
                            r"(?:job|srp|seeker)/[\w\-/]+"),
 }
