@@ -123,6 +123,53 @@ def job(request: Request, job_id: int):
         "trace": trace, "agent_errors": agent_errors})
 
 
+PROFILE = {
+    "Full name": "Rudrabha Chakraborty",
+    "First name": "Rudrabha",
+    "Last name": "Chakraborty",
+    "Email": "crudrabha@gmail.com",
+    "Phone": "+91 74399 68388",
+    "LinkedIn": "https://linkedin.com/in/rudrabha-chakraborty-2b02551b7",
+    "Location": "Kolkata, India",
+    "Notice period": "Serving / as per current role",
+    "Experience": "1.5 years",
+}
+
+
+@app.get("/work", response_class=HTMLResponse)
+def work(request: Request):
+    """Focused queue-working view: one job at a time, everything copyable."""
+    con = db.connect()
+    row = con.execute(
+        """SELECT j.*, a.resume_path FROM jobs j JOIN applications a ON a.job_id=j.id
+           WHERE j.status='queued' ORDER BY j.score DESC LIMIT 1""").fetchone()
+    remaining = con.execute(
+        "SELECT COUNT(*) FROM jobs WHERE status='queued'").fetchone()[0]
+    d = None
+    if row:
+        fp = DRAFTS / f"{row['id']}.json"
+        if fp.exists():
+            d = json.loads(fp.read_text())
+    stats = _stats(con); con.close()
+    return tpl.TemplateResponse(request, "dash.html", {
+        "tab": "work", "stats": stats, "j": row, "d": d,
+        "remaining": remaining, "profile": PROFILE})
+
+
+@app.post("/work/{job_id}/{action}")
+def work_action(job_id: int, action: str):
+    """applied | skip - either way we advance to the next job."""
+    con = db.connect()
+    if action == "applied":
+        con.execute("UPDATE jobs SET status='applied' WHERE id=?", (job_id,))
+        con.execute("UPDATE applications SET submitted_at=? WHERE job_id=?",
+                    (db.now(), job_id))
+    else:
+        con.execute("UPDATE jobs SET status='skipped' WHERE id=?", (job_id,))
+    con.commit(); con.close()
+    return RedirectResponse("/work", status_code=303)
+
+
 @app.post("/mark/{job_id}")
 def mark(job_id: int, status: str = Form(...)):
     con = db.connect()

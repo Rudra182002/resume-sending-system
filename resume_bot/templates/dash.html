@@ -91,6 +91,7 @@ pre{white-space:pre-wrap;background:var(--plane);padding:11px;border-radius:8px;
   <h1>Resume Tracker</h1>
   <nav>
     <a href="/" class="{{'on' if tab=='overview'}}">Overview</a>
+    <a href="/work" class="{{'on' if tab=='work'}}">Apply</a>
     <a href="/applications" class="{{'on' if tab=='applications'}}">Applications</a>
     <a href="/contacts" class="{{'on' if tab=='contacts'}}">Contacts</a>
     <a href="/mail" class="{{'on' if tab=='mail'}}">Mail</a>
@@ -216,6 +217,56 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
   </div>
 {% endif %}
 
+{% if tab=='work' %}
+  {% if not j %}
+    <div class="card"><h2>Queue empty</h2>
+      <p class="sec">Nothing queued. Run <code>python -m resume_bot agents 50</code> to fill it.</p></div>
+  {% else %}
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div>
+        <h2 style="margin:0 0 3px">{{ j.company }}</h2>
+        <div style="font-size:18px;font-weight:600">{{ j.title }}</div>
+        <div class="muted" style="font-size:12.5px">{{ j.location }} · score {{ j.score|round|int }} · {{ j.source }}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="muted" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em">Remaining</div>
+        <div style="font-size:24px;font-weight:660">{{ remaining }}</div>
+      </div>
+    </div>
+    <div class="row" style="margin:14px 0 0">
+      {% if j.apply_url %}<a href="{{ j.apply_url }}" target="_blank" rel="noopener">
+        <button style="background:var(--series-1);color:#fff;border-color:transparent;font-weight:600;padding:7px 16px">Open portal ↗</button></a>{% endif %}
+      <form class="inline" method="post" action="/work/{{j.id}}/applied">
+        <button style="font-weight:600">✓ Applied — next</button></form>
+      <form class="inline" method="post" action="/work/{{j.id}}/skip">
+        <button>Skip</button></form>
+      <a href="/job/{{j.id}}"><button type="button">Full detail</button></a>
+    </div>
+  </div>
+
+  <div class="card"><h2>Click any field to copy</h2>
+    <table><tbody>
+    {% for k, v in profile.items() %}<tr>
+      <td class="muted" style="width:140px">{{ k }}</td>
+      <td><button class="cp" data-v="{{ v }}" style="width:100%;text-align:left;font-family:ui-monospace,monospace;font-size:12.5px">{{ v }}</button></td>
+    </tr>{% endfor %}
+    {% if j.resume_path %}<tr><td class="muted">Resume path</td>
+      <td><button class="cp" data-v="{{ j.resume_path }}" style="width:100%;text-align:left;font-family:ui-monospace,monospace;font-size:11.5px">{{ j.resume_path }}</button></td></tr>{% endif %}
+    </tbody></table>
+    <p class="muted" style="font-size:11.5px;margin:10px 0 0">Upload the resume from that path in the portal's file picker.</p>
+  </div>
+
+  {% if d and d.fit %}
+  <div class="card"><h2>Why you fit</h2><p class="sec">{{ d.fit }}</p>
+    {% if d.gaps %}<p class="muted" style="font-size:12.5px"><b>Gaps:</b> {{ d.gaps|join(', ') }}</p>{% endif %}
+  </div>{% endif %}
+
+  <div class="card"><h2>Job description</h2>
+    <pre style="max-height:320px;overflow:auto">{{ (j.jd_text or 'No JD captured — open the portal.')[:7000] }}</pre></div>
+  {% endif %}
+{% endif %}
+
 {% if tab=='job' and j %}
   <div class="card">
     <div class="row" style="justify-content:space-between">
@@ -261,4 +312,25 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
     <pre style="max-height:400px;overflow:auto">{{ (j.jd_text or 'No JD captured.')[:9000] }}</pre></div>
 {% endif %}
 
-</main></body></html>
+</main>
+<script>
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('.cp');
+  if (!b) return;
+  var v = b.getAttribute('data-v'), old = b.textContent;
+  var done = function () {
+    b.textContent = '\u2713 copied';
+    setTimeout(function () { b.textContent = old; }, 900);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(v).then(done, function(){});
+  } else {
+    var t = document.createElement('textarea');
+    t.value = v; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); done(); } catch (err) {}
+    document.body.removeChild(t);
+  }
+});
+</script>
+</body></html>
