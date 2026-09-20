@@ -97,6 +97,14 @@ def _extract(site, body):
         mode = mm.group(1) if mm else ""
         if mm:
             company = company[:mm.start()].strip()
+        # Naukri appends its star rating and duration text to the company name
+        # ("Refyne 2.1 6 months duration"). Strip anything after a rating-like
+        # number or a duration phrase.
+        company = re.sub(r"\s+\d\.\d\b.*$", "", company)
+        company = re.sub(r"\s+\d+\s*(?:months?|years?)\s*duration.*$", "", company, flags=re.I)
+        company = re.sub(r"\s+(?:Not disclosed|Posted|Apply|Save).*$", "", company, flags=re.I)
+        company = company.strip(" ,-|\u00b7")
+
         cm = CITY_RE.search(company)
         if cm:
             location = (company[cm.start():].strip() + (f" ({mode})" if mode else "")).strip()
