@@ -167,6 +167,9 @@ class TrackerAgent(Agent):
             "fit": (ctx.tailored or {}).get("fit_rationale", ""),
             "mode": (ctx.tailored or {}).get("_mode", ""),
             "form": ctx.form, "trace": ctx.trace, "errors": ctx.errors,
+            # keep the tailoring itself so the PDF can be re-rendered later
+            # without paying for the model again
+            "tailored": ctx.tailored,
         }, indent=2))
         con.close()
 
