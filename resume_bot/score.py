@@ -25,6 +25,18 @@ def _location_tier(job, L, jd):
     # No location at all (common in alert emails). Unknown is not foreign -
     # don't reject on absence of evidence, just don't reward it either.
     if not loc.strip():
+        # No location field. Fall back to the JD/company text before trusting it -
+        # "Sii Poland" with a blank location is not an India-open role.
+        blob = f"{(job['company'] or '')} {jd[:1500]}".lower()
+        if any(c in blob for c in ("india", "bengaluru", "bangalore", "hyderabad",
+                                   "gurugram", "pune", "mumbai", "chennai", "noida")):
+            return "remote_india", "India named, location field empty"
+        foreign_named = any(f in blob for f in (
+            "poland", "germany", "united states", "canada", "united kingdom",
+            "netherlands", "spain", "france", "brazil", "mexico", "singapore",
+            "australia", "philippines", "vietnam", "romania", "portugal"))
+        if foreign_named:
+            return "reject", "foreign market named, no India signal"
         return "remote_global", "location not stated"
 
     # Remove work-mode words and separators; whatever remains is geography.

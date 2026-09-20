@@ -244,6 +244,19 @@ No <b>ANTHROPIC_API_KEY</b> set — resumes render with the generic summary, not
       <td class="muted">{{ c.role or '' }}</td></tr>{% endfor %}</tbody></table>
   </div>{% endif %}
 
+  {% if trace %}
+  <div class="card"><h2>Agent pipeline</h2>
+    <table><thead><tr><th>Agent</th><th>Status</th><th class="num">Time</th><th>Detail</th></tr></thead><tbody>
+    {% for t in trace %}<tr>
+      <td class="sec">{{ t.agent }}</td>
+      <td><span class="chip {{ 'c-applied' if t.status=='ok' else ('c-rejected' if t.status=='skipped' else 'c-queued') }}">{{ t.status }}</span></td>
+      <td class="num">{{ t.ms }}ms</td>
+      <td class="muted">{{ t.detail[:70] }}</td>
+    </tr>{% endfor %}</tbody></table>
+    {% if agent_errors %}<p class="sec" style="font-size:12.5px;margin-top:10px">
+      <b>Errors:</b> {{ agent_errors|join('; ') }}</p>{% endif %}
+  </div>{% endif %}
+
   <div class="card"><h2>Job description</h2>
     <pre style="max-height:400px;overflow:auto">{{ (j.jd_text or 'No JD captured.')[:9000] }}</pre></div>
 {% endif %}

@@ -6,11 +6,25 @@ UA = {"User-Agent": "Mozilla/5.0 (compatible; job-pipeline/0.1; +personal-jobsea
 TIMEOUT = httpx.Timeout(25.0, connect=10.0)
 
 
+MOJIBAKE = re.compile(r"[ÂÃâ][\x80-\xbf\u0080-\u00bf\u2020-\u20ff]")
+
+
+def fix_mojibake(t: str) -> str:
+    """Undo UTF-8 bytes that were decoded as latin-1 upstream ('â' for an en dash)."""
+    if not t or not MOJIBAKE.search(t):
+        return t
+    try:
+        repaired = t.encode("latin-1", "ignore").decode("utf-8", "ignore")
+        return repaired if repaired.strip() else t
+    except Exception:
+        return t
+
+
 def _clean(raw_html: str) -> str:
     if not raw_html:
         return ""
     txt = re.sub(r"<[^>]+>", " ", html.unescape(raw_html))
-    return re.sub(r"\s+", " ", txt).strip()
+    return fix_mojibake(re.sub(r"\s+", " ", txt).strip())
 
 
 def _get(client, url):
@@ -161,8 +175,8 @@ def adzuna(client, app_id, app_key, country="in", pages=5,
             for j in d.get("results", []):
                 out.append({
                     "source": "adzuna", "external_id": j.get("id"),
-                    "company": (j.get("company") or {}).get("display_name", ""),
-                    "title": j.get("title", ""),
+                    "company": fix_mojibake((j.get("company") or {}).get("display_name", "")),
+                    "title": fix_mojibake(j.get("title", "")),
                     "location": (j.get("location") or {}).get("display_name"),
                     "url": j.get("redirect_url"), "apply_url": j.get("redirect_url"),
                     "jd_text": _clean(j.get("description", "")),

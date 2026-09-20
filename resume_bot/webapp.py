@@ -112,10 +112,15 @@ def job(request: Request, job_id: int):
         d = json.loads(p.read_text())
     cts = con.execute("SELECT * FROM contacts WHERE lower(company) LIKE ?",
                       (f"%{(j['company'] or '').lower()[:14]}%",)).fetchall() if j else []
+    ar = con.execute("SELECT * FROM agent_runs WHERE job_id=? ORDER BY id DESC LIMIT 1",
+                     (job_id,)).fetchone()
+    trace = json.loads(ar["trace"]) if ar and ar["trace"] else []
+    agent_errors = json.loads(ar["errors"]) if ar and ar["errors"] else []
     stats = _stats(con); con.close()
     return tpl.TemplateResponse(request, "dash.html", {
         "tab": "job", "stats": stats,
-        "j": j, "a": a, "d": d, "contacts": cts})
+        "j": j, "a": a, "d": d, "contacts": cts,
+        "trace": trace, "agent_errors": agent_errors})
 
 
 @app.post("/mark/{job_id}")

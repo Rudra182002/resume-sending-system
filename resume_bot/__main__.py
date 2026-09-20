@@ -17,6 +17,11 @@ def main():
             print("matched to ATS rows:", alerts.backfill_jd(con, al))
             db.upsert_jobs(con, al)
             print("scoring:", score.run())
+    elif cmd == "agents":
+        from . import agents
+        o = agents.Orchestrator(workers=int(sys.argv[3]) if len(sys.argv) > 3 else 4)
+        res = o.run(limit=int(arg) if arg else 25)
+        import json as _j; print(_j.dumps(agents.summarise(res), indent=2))
     elif cmd == "apply":
         from . import apply
         apply.run(limit=int(arg) if arg else 10)
@@ -30,7 +35,7 @@ def main():
         print("dashboard -> http://127.0.0.1:8777   (ctrl-c to stop)")
         webapp.serve(port=int(arg) if arg else 8777)
     else:
-        print("usage: python -m resume_bot {run [n]|ingest|score|review|show <id>|approve <id> <email>|dash|doctor|harvest [days]|apply [n]}")
+        print("usage: python -m resume_bot {run [n]|ingest|score|review|show <id>|approve <id> <email>|dash|doctor|harvest [days]|apply [n]|agents [n] [workers]}")
 
 if __name__ == "__main__":
     main()

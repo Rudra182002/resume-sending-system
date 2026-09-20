@@ -58,6 +58,15 @@ CREATE TABLE IF NOT EXISTS contacts (
 );
 CREATE INDEX IF NOT EXISTS idx_contacts_company ON contacts(company);
 
+CREATE TABLE IF NOT EXISTS agent_runs (
+    id         INTEGER PRIMARY KEY,
+    job_id     INTEGER REFERENCES jobs(id),
+    trace      TEXT,
+    errors     TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_agent_runs_job ON agent_runs(job_id);
+
 CREATE TABLE IF NOT EXISTS sent_log (
     id         INTEGER PRIMARY KEY,
     job_id     INTEGER REFERENCES jobs(id),
