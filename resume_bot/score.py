@@ -148,14 +148,19 @@ def score_job(job, p, employers=None):
     # Freshness. A posting nobody has answered in four months is usually filled.
     rec = p.get("recency") or {}
     age = dates.age_days(job["posted_ts"] if "posted_ts" in job.keys() else None)
+    live = (job["source"] or "") in (rec.get("live_sources") or [])
     if age is not None:
-        if age > rec.get("max_age_days", 120):
+        if not live and age > rec.get("max_age_days", 120):
             return 0, [f"stale posting ({age:.0f} days old)"]
         for cutoff in sorted(rec.get("bonus", {})):
             if age <= cutoff:
                 delta = rec["bonus"][cutoff]
+                # a live board never gets penalised for age, only rewarded
+                if delta < 0 and live:
+                    delta = 0
                 pts += delta
-                why.append(f"posted {age:.0f}d ago ({delta:+d})")
+                why.append(f"posted {age:.0f}d ago ({delta:+d})"
+                           + (" [live board]" if live else ""))
                 break
 
     # Staffing firm rather than the employer - one more layer between you and
