@@ -82,6 +82,9 @@ def _section(title):
     return [Paragraph(_spaced(title), SEC), _rule()]
 
 
+MAX_PROJECTS = 2   # a one-page resume leads with the most relevant, not all
+
+
 def render(master, tailored, job, outdir=None, compact=False):
     outdir = pathlib.Path(outdir or OUT)
     outdir.mkdir(parents=True, exist_ok=True)
@@ -147,14 +150,21 @@ def render(master, tailored, job, outdir=None, compact=False):
                 block.append(Paragraph(_bold_metrics(_esc(b)), BULLET, bulletText="•"))
             S.append(KeepTogether(block))
 
-    # ---- academic projects ----
-    if not compact:
-        S += _section("Academic Projects")
-        for p in master["projects"]:
+    # ---- standalone projects ----
+    if True:
+        S += _section("Projects")
+        # Same treatment as work projects: the tailor may reorder these and
+        # rewrite their bullets. They were previously pinned to master text.
+        aps = sorted(master["projects"],
+                     key=lambda x: porder.index(x["name"]) if x["name"] in porder else 99)
+        # Compact keeps the section but shows fewer - losing the whole section
+        # was worse than losing the least relevant entry in it.
+        aps = aps[:(1 if compact else MAX_PROJECTS)]
+        for ap in aps:
             S.append(Paragraph(
-                f'{_esc(p["name"])} &nbsp;&nbsp;'
-                f'<font color="#595959" size="7.8"><i>{_esc(p["tech"])}</i></font>', PROJ))
-            for b in p["bullets"]:
+                f'{_esc(ap["name"])} &nbsp;&nbsp;'
+                f'<font color="#595959" size="7.8"><i>{_esc(ap["tech"])}</i></font>', PROJ))
+            for b in (rewrites.get(ap["name"]) or ap["bullets"]):
                 S.append(Paragraph(_bold_metrics(_esc(b)), BULLET, bulletText="•"))
 
     # ---- education table ----

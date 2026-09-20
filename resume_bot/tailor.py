@@ -31,6 +31,8 @@ STRUCTURE IS FIXED
   - Same employers, same order, same dates.
   - Same projects under each employer. You may reorder them; you may not add,
     merge, drop or rename them.
+  - The standalone projects are reorderable and rewritable on the same terms.
+    Lead with whichever is most relevant to this JD.
   - EXACTLY the same number of bullets per project as the master. Not one more,
     not one fewer.
   - Each rewritten bullet stays within roughly 80-130% of the original length.
