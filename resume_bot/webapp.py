@@ -192,6 +192,22 @@ def work_action(job_id: int, action: str):
     return RedirectResponse("/work", status_code=303)
 
 
+@app.get("/setup", response_class=HTMLResponse)
+def setup(request: Request):
+    """Page that hands over the autofill bookmarklet."""
+    import urllib.parse
+    js = (ROOT / "static" / "autofill.js").read_text()
+    payload = ("window.__RB_PROFILE__=" + json.dumps(identity.autofill()) + ";" + js)
+    # collapse the comment header and newlines so it fits a bookmarklet URL
+    payload = re.sub(r"/\*.*?\*/", "", payload, flags=re.S)
+    payload = re.sub(r"\n\s*", " ", payload)
+    href = "javascript:" + urllib.parse.quote(payload, safe="")
+    con = db.connect(); stats = _stats(con); con.close()
+    return tpl.TemplateResponse(request, "dash.html", {
+        "tab": "setup", "stats": stats, "bookmarklet": href,
+        "profile": identity.autofill(), "agelabel": _agelabel})
+
+
 @app.get("/resume/{job_id}")
 def resume(job_id: int, download: int = 0):
     """Serve the tailored PDF for this job - inline so it previews in the tab."""
