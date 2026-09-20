@@ -1,0 +1,57 @@
+{
+  "name": "Your Name",
+  "headline": "AI Engineer | Your specialisms",
+  "location": "City, Country",
+  "email": "you@example.com",
+  "phone": "+00 00000 00000",
+  "linkedin": "linkedin.com/in/your-handle",
+  "notice_period": "As per current role",
+  "experience_years": "2 years",
+  "summary": "Two to four sentences. Lead with your strongest metric.",
+  "skills": {
+    "Group A": [
+      "Skill",
+      "Skill"
+    ],
+    "Group B": [
+      "Skill"
+    ]
+  },
+  "experience": [
+    {
+      "company": "Employer",
+      "role": "Title",
+      "start": "Jan 2024",
+      "end": "Present",
+      "projects": [
+        {
+          "name": "Project",
+          "tech": "Stack",
+          "bullets": [
+            "What you did, with a number in it."
+          ]
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Side project",
+      "tech": "Stack",
+      "bullets": [
+        "What it does and the result."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "year": "2024",
+      "degree": "Degree",
+      "institution": "Institution",
+      "grade": "Grade"
+    }
+  ],
+  "achievements": [
+    "Achievement"
+  ]
+}

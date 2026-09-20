@@ -1,9 +1,4 @@
-name: Rudrabha Chakraborty
-email: crudrabha@gmail.com
-phone: "+91 74399 68388"
-linkedin: linkedin.com/in/rudrabha-chakraborty-2b02551b7
-location: Kolkata, India
-
+# Targeting policy. Identity lives in data/master_resume.json.
 # Titles worth applying to. Weighted highest signal first.
 # Three tiers. Strong = what you do now. Ok = genuine lateral moves.
 # Fallback = wider net, scored lower so it never outranks a real match.

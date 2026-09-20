@@ -5,6 +5,8 @@
 __pycache__/
 *.pyc
 data/*.db
+data/master_resume.json
+!data/master_resume.example.json
 output/
 logs/
 *.log

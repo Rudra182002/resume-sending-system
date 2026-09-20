@@ -6,7 +6,7 @@ import json, pathlib, os, re, datetime
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-from . import db, send, llm, llm
+from . import db, send, llm, identity, llm
 
 ROOT = pathlib.Path(__file__).resolve().parent
 DRAFTS = ROOT.parent / "output" / "drafts"
@@ -155,17 +155,7 @@ def job(request: Request, job_id: int):
         "trace": trace, "agent_errors": agent_errors, "agelabel": _agelabel})
 
 
-PROFILE = {
-    "Full name": "Rudrabha Chakraborty",
-    "First name": "Rudrabha",
-    "Last name": "Chakraborty",
-    "Email": "crudrabha@gmail.com",
-    "Phone": "+91 74399 68388",
-    "LinkedIn": "https://linkedin.com/in/rudrabha-chakraborty-2b02551b7",
-    "Location": "Kolkata, India",
-    "Notice period": "Serving / as per current role",
-    "Experience": "1.5 years",
-}
+PROFILE = identity.profile()
 
 
 @app.get("/work", response_class=HTMLResponse)

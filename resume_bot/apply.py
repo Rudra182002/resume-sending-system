@@ -19,13 +19,9 @@ from . import db
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SHOTS = ROOT / "output" / "applications"
 
-PROFILE = {
-    "first_name": "Rudrabha", "last_name": "Chakraborty",
-    "full_name": "Rudrabha Chakraborty",
-    "email": "crudrabha@gmail.com", "phone": "+917439968388",
-    "linkedin": "https://linkedin.com/in/rudrabha-chakraborty-2b02551b7",
-    "location": "Kolkata, India",
-}
+from . import identity
+
+PROFILE = identity.form_fields()
 
 # Per-ATS selectors, tried in order; first that exists wins.
 FIELDS = {
