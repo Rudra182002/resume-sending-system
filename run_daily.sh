@@ -19,6 +19,7 @@ LOG="logs/daily-$TODAY.log"
   echo "=== run $(date -Is) ==="
   ./.venv/bin/python -m resume_bot harvest 3     # alert mail: LinkedIn / Naukri / foundit
   ./.venv/bin/python -m resume_bot agents 60 6   # ingest, score, research, tailor, render
+  ./.venv/bin/python -m resume_bot prune         # keep the database syncable
   echo "=== finished $(date -Is) ==="
 } >> "$LOG" 2>&1
 

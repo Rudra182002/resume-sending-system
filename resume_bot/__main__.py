@@ -47,13 +47,16 @@ def main():
         res = o.run(limit=int(arg) if arg else 25)
         import json
         print(json.dumps(agents.summarise(res), indent=2))
+    elif cmd == "prune":
+        from . import prune
+        prune.run()
     elif cmd == "rerender":
         from . import rerender
         rerender.run()
     else:
         print("usage: python -m resume_bot {run [n]|ingest|score [all]|review|"
               "show <id>|approve <id> <email>|dash [port]|doctor|harvest [days]|"
-              "apply [n]|agents [n] [workers]|rerender}")
+              "apply [n]|agents [n] [workers]|rerender|prune}")
 
 
 if __name__ == "__main__":

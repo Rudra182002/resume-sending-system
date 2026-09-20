@@ -78,6 +78,9 @@ jobs:
         run: |
           python scripts/summary.py >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Prune the database
+        run: python -m resume_bot prune
+
       - name: Save state back
         run: |
           cp data/jobs.db state/jobs.db
