@@ -1,11 +1,24 @@
+# Model access - either provider works; llm.py picks by whatever is configured.
 anthropic>=0.40
+openai>=1.40
+
+# HTTP, config, CLI output
 httpx>=0.27
-pydantic>=2.7
-pyyaml>=6.0
 python-dotenv>=1.0
+pyyaml>=6.0
 rich>=13.7
-jinja2>=3.1
-weasyprint>=62
+pydantic>=2.7
+
+# Resume rendering. ReportLab replaced the old HTML renderer because it needs
+# no system libraries - important on a clean CI runner.
+reportlab>=4.2
 pypdf>=4.2
-tenacity>=8.2
+
+# Local dashboard
+fastapi>=0.111
+uvicorn>=0.30
+jinja2>=3.1
 python-multipart>=0.0.9
+
+# Form autofill is opt-in and only imported inside the apply commands, so CI
+# does not install it: pip install playwright && playwright install chromium
