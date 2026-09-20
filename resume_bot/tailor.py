@@ -119,6 +119,9 @@ def verify_structure(tailored, master):
     """The prompt says structure is fixed. Check it, don't trust it."""
     problems = []
     real = {p["name"]: p for e in master["experience"] for p in e["projects"]}
+    # Academic projects live at the top level, not under an employer. They are
+    # still real - not counting them reported them as invented.
+    real.update({p["name"]: p for p in master.get("projects", [])})
     for name, bullets in (tailored.get("bullet_rewrites") or {}).items():
         if name not in real:
             problems.append(f"unknown project invented: {name!r}")
@@ -153,15 +156,21 @@ def verify_voice(tailored):
     return [w for w in BANNED if w in prose]
 
 
-def verify_no_fabrication(tailored, master):
+def verify_no_fabrication(tailored, master, with_context=False):
     """Every number in generated prose must already exist in the master resume."""
     allowed = set(NUM.findall(json.dumps(master)))
     prose = " ".join(
         [tailored.get("summary", ""), tailored.get("fit_rationale", "")]
-        + [b for bs in tailored.get("bullet_rewrites", {}).values() for b in bs]
+        + [b for bs in (tailored.get("bullet_rewrites") or {}).values() for b in bs]
     )
     invented = [n for n in NUM.findall(prose) if n not in allowed]
-    return invented
+    if not with_context:
+        return invented
+    out = []
+    for n in dict.fromkeys(invented):
+        m = re.search(rf"(.{{0,45}}\b{re.escape(n)}\b.{{0,45}})", prose)
+        out.append(f"{n!r} in \u2026{m.group(1).strip()}\u2026" if m else repr(n))
+    return out
 
 
 # ---------- dry-run stub ----------
@@ -200,9 +209,9 @@ def tailor(job, master=None, company_ctx="", dry_run=None):
                        max_tokens=2000)
     out["_mode"] = f"live:{llm.provider()}"
 
-    invented = verify_no_fabrication(out, master)
+    invented = verify_no_fabrication(out, master, with_context=True)
     if invented:
-        out["_warning"] = f"BLOCKED: numbers not in master: {invented}"
+        out["_warning"] = "BLOCKED: numbers not in master: " + " | ".join(invented)
         out["summary"] = master["summary"]      # fall back to the verified original
         out["bullet_rewrites"] = {}
         return out
