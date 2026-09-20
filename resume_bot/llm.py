@@ -50,7 +50,17 @@ def _client_and_call(system, user, max_tokens, as_json):
         r = Anthropic(**kw).messages.create(
             model=model_name(), max_tokens=max_tokens, system=system,
             messages=[{"role": "user", "content": user}])
-        return r.content[0].text
+        # With extended thinking on, content[0] is a ThinkingBlock, not the
+        # answer. Collect the text blocks rather than assuming an index.
+        parts = [b.text for b in r.content
+                 if getattr(b, "type", None) == "text" and hasattr(b, "text")]
+        if not parts:                      # older/plain shapes
+            parts = [b.text for b in r.content if hasattr(b, "text")]
+        if not parts:
+            raise RuntimeError(
+                "no text block in response; blocks="
+                + ",".join(getattr(b, "type", "?") for b in r.content))
+        return "\n".join(parts)
 
     if p == "azure":
         from openai import AzureOpenAI
