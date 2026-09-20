@@ -1,0 +1,92 @@
+name: Daily job pipeline
+
+on:
+  schedule:
+    - cron: "30 3 * * *"        # 09:00 IST (03:30 UTC), every day
+  workflow_dispatch:             # and a manual "Run workflow" button
+
+concurrency:
+  group: daily-pipeline
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout pipeline code
+        uses: actions/checkout@v4
+
+      - name: Checkout private state
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.STATE_REPO }}
+          token: ${{ secrets.STATE_TOKEN }}
+          path: state
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore state
+        run: |
+          mkdir -p data output/resumes output/drafts logs
+          [ -f state/jobs.db ] && cp state/jobs.db data/jobs.db || echo "no prior database - first run"
+          [ -f state/master_resume.json ] && cp state/master_resume.json data/master_resume.json \
+            || { echo "::error::state repo is missing master_resume.json"; exit 1; }
+          [ -d state/drafts ] && cp -r state/drafts/. output/drafts/ || true
+
+      - name: Write .env from secrets
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_BASE_URL: ${{ secrets.ANTHROPIC_BASE_URL }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          IMAP_USER: ${{ secrets.IMAP_USER }}
+          IMAP_PASS: ${{ secrets.IMAP_PASS }}
+        run: |
+          {
+            echo "LLM_MAX_TOKENS=12000"
+            echo "IMAP_HOST=imap.gmail.com"
+            echo "IMAP_FOLDER=INBOX"
+            echo "AUTO_SEND=false"          # never send unattended from CI
+            echo "APPLY_MODE=prepare"       # never submit forms unattended
+            for k in ANTHROPIC_API_KEY ANTHROPIC_BASE_URL OPENAI_API_KEY LLM_PROVIDER \
+                     LLM_MODEL ADZUNA_APP_ID ADZUNA_APP_KEY IMAP_USER IMAP_PASS; do
+              v="${!k}"
+              [ -n "$v" ] && echo "$k=$v"
+            done
+          } > .env
+          echo "wrote .env with $(grep -c . .env) settings"
+
+      - name: Harvest alert email
+        continue-on-error: true
+        run: python -m resume_bot harvest 3
+
+      - name: Run the agent pipeline
+        run: python -m resume_bot agents 60 6
+
+      - name: Summarise
+        run: |
+          python scripts/summary.py >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save state back
+        run: |
+          cp data/jobs.db state/jobs.db
+          mkdir -p state/drafts state/resumes
+          cp -r output/drafts/. state/drafts/ 2>/dev/null || true
+          cp -r output/resumes/. state/resumes/ 2>/dev/null || true
+          cd state
+          git config user.name  "job-pipeline"
+          git config user.email "actions@github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "Daily run $(date -u +%Y-%m-%d)"
+          git push
